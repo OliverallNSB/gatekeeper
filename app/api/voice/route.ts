@@ -14,25 +14,22 @@ export async function POST(req: Request) {
 <Response>
   <Say voice="alice">
     Hello. This call is screened by Gatekeeper.
-    After the beep, please briefly say why you are calling.
+    Please briefly tell me why you are calling after the tone.
   </Say>
 
   <Pause length="1"/>
-  <Play>https://api.twilio.com/cowbell.mp3</Play>
 
   <Gather
     input="speech"
-    action="${baseUrl}/api/voice/triage"
-    method="POST"
     speechTimeout="auto"
     timeout="6"
+    action="${baseUrl}/api/voice/triage"
+    method="POST"
   >
     <Say voice="alice">Go ahead.</Say>
   </Gather>
 
-  <Say voice="alice">
-    I did not hear anything. Please call again. Goodbye.
-  </Say>
+  <Say voice="alice">I did not hear anything. Goodbye.</Say>
 </Response>`;
 
   return xml(twiml);
