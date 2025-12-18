@@ -14,22 +14,24 @@ export async function POST(req: Request) {
 <Response>
   <Say voice="alice">
     Hello. This call is screened by Gatekeeper.
-    Please briefly tell me why you are calling after the tone.
+    Please say why you are calling.
+    Or press 1 to skip speaking.
   </Say>
 
-  <Pause length="1"/>
-
   <Gather
-    input="speech"
-    speechTimeout="auto"
-    timeout="6"
+    input="speech dtmf"
     action="${baseUrl}/api/voice/triage"
     method="POST"
+    speechTimeout="auto"
+    timeout="12"
+    numDigits="1"
+    actionOnEmptyResult="true"
+    language="en-US"
   >
-    <Say voice="alice">Go ahead.</Say>
+    <Say voice="alice">Go ahead now.</Say>
   </Gather>
 
-  <Say voice="alice">I did not hear anything. Goodbye.</Say>
+  <Say voice="alice">I did not receive anything. Goodbye.</Say>
 </Response>`;
 
   return xml(twiml);
