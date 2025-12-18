@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 
 function xml(twiml: string) {
@@ -7,15 +9,12 @@ function xml(twiml: string) {
   });
 }
 
-export async function POST(req: Request) {
-  const baseUrl = new URL(req.url).origin;
-
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+function buildTwiml(baseUrl: string) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">
     Hello. This call is screened by Gatekeeper.
     Please say why you are calling.
-    Or press 1 to skip speaking.
   </Say>
 
   <Gather
@@ -26,13 +25,20 @@ export async function POST(req: Request) {
     timeout="12"
     numDigits="1"
     actionOnEmptyResult="true"
-    language="en-US"
   >
-    <Say voice="alice">Go ahead now.</Say>
+    <Say voice="alice">Go ahead.</Say>
   </Gather>
 
-  <Say voice="alice">I did not receive anything. Goodbye.</Say>
+  <Say voice="alice">Goodbye.</Say>
 </Response>`;
+}
 
-  return xml(twiml);
+export async function POST(req: Request) {
+  const baseUrl = new URL(req.url).origin;
+  return xml(buildTwiml(baseUrl));
+}
+
+export async function GET(req: Request) {
+  const baseUrl = new URL(req.url).origin;
+  return xml(buildTwiml(baseUrl));
 }
