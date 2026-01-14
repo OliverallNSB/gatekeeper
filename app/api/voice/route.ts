@@ -15,6 +15,7 @@ function buildTwiml(baseUrl: string) {
   <Say voice="alice">
     Hello. This call is screened by Gatekeeper.
     Please say why you are calling.
+    Or press 1 to skip speaking.
   </Say>
 
   <Gather

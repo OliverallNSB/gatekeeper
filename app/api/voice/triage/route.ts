@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 
 function xml(twiml: string) {
@@ -19,7 +21,7 @@ export async function POST(req: Request) {
 
   console.log("TRIAGE", { callSid, from, speech, confidence, digits });
 
-  // Send SMS summary to you (best-effort; call flow should still work if SMS fails)
+  // SMS owner (best effort)
   try {
     await sendOwnerSms({
       from,
@@ -31,19 +33,39 @@ export async function POST(req: Request) {
     console.error("SMS_FAILED", err?.message ?? err);
   }
 
-  let msg = "";
-  if (digits === "1") {
-    msg = "Okay. I will notify the owner. Goodbye.";
-  } else if (!speech) {
-    msg = "Sorry, I did not catch that. I will notify the owner. Goodbye.";
-  } else {
-    msg = `Thank you. I heard: ${escapeXml(speech)}. I will notify the owner. Goodbye.`;
+  const owner = process.env.OWNER_MOBILE_NUMBER || "";
+  const urgent = isUrgent(speech);
+
+  // If urgent, forward call to you
+  if (urgent && owner) {
+    return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">One moment. Connecting you now.</Say>
+  <Dial>${escapeXml(owner)}</Dial>
+</Response>`);
   }
+
+  // Otherwise, end politely
+  const msg =
+    speech
+      ? `Thank you. I will notify the owner. Goodbye.`
+      : `Thanks. I will notify the owner. Goodbye.`;
 
   return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">${msg}</Say>
 </Response>`);
+}
+
+function isUrgent(text: string) {
+  const t = (text || "").toLowerCase();
+  return (
+    t.includes("urgent") ||
+    t.includes("emergency") ||
+    t.includes("asap") ||
+    t.includes("right away") ||
+    t.includes("immediately")
+  );
 }
 
 async function sendOwnerSms(payload: {
@@ -85,9 +107,7 @@ async function sendOwnerSms(payload: {
   });
 
   const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Twilio SMS error ${res.status}: ${text}`);
-  }
+  if (!res.ok) throw new Error(`Twilio SMS error ${res.status}: ${text}`);
 }
 
 function escapeXml(s: string) {
