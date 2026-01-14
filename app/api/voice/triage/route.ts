@@ -74,6 +74,7 @@ async function sendOwnerSms(payload: {
   speech: string;
   confidence: string;
 }) {
+
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
   const fromNumber = process.env.TWILIO_FROM_NUMBER!;
@@ -84,11 +85,10 @@ async function sendOwnerSms(payload: {
   }
 
   const body =
-    `Gatekeeper call screened\n` +
+    `Gatekeeper alert\n` +
     `From: ${payload.from || "unknown"}\n` +
-    `Reason: ${payload.speech}\n` +
-    (payload.confidence ? `Confidence: ${payload.confidence}\n` : "") +
-    `CallSid: ${payload.callSid}`;
+    `Msg: ${payload.speech.slice(0, 80)}`;
+
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
