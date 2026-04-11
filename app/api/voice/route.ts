@@ -20,7 +20,9 @@ function buildTwiml(baseUrl: string) {
 
   <Gather
     input="speech dtmf"
-    action="${baseUrl}/api/voice/triage"
+
+    action="https://undress-heading-proton.ngrok-free.dev/api/voice/triage"
+
     method="POST"
     speechTimeout="auto"
     timeout="12"
@@ -35,11 +37,19 @@ function buildTwiml(baseUrl: string) {
 }
 
 export async function POST(req: Request) {
-  const baseUrl = new URL(req.url).origin;
+  
+  const baseUrl = process.env.NGROK_URL || new URL(req.url).origin;
+
+  
+  console.log("BASE_URL", baseUrl);
+
   return xml(buildTwiml(baseUrl));
 }
 
 export async function GET(req: Request) {
-  const baseUrl = new URL(req.url).origin;
+  
+  const baseUrl = process.env.NGROK_URL || new URL(req.url).origin;
+
+  
   return xml(buildTwiml(baseUrl));
 }

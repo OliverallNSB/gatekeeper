@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 function xml(twiml: string) {
   return new NextResponse(twiml, {
@@ -18,17 +19,47 @@ export async function POST(req: Request) {
 
   const from = (form.get("From") ?? "").toString();
   const callSid = (form.get("CallSid") ?? "").toString();
+  const to = (form.get("To") ?? "").toString();
 
   console.log("TRIAGE", { callSid, from, speech, confidence, digits });
 
+  // Save to Supabase
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const urgent = isUrgent(speech);
+
+    const { error } = await supabase.from("call_sessions").insert({
+      call_sid: callSid,
+      from_number: from,
+      to_number: to,
+      caller_reason: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
+      status: "completed",
+      decision: urgent ? "transferred" : "voicemail",
+    });
+
+    if (error) {
+      console.error("SUPABASE_INSERT_ERROR", error);
+    } else {
+      console.log("CALL_SAVED_TO_SUPABASE");
+    }
+  } catch (err: any) {
+    console.error("SUPABASE_ERROR", err?.message ?? err);
+  }
+
   // SMS owner (best effort)
   try {
+    console.log("SENDING_SMS_TO", process.env.OWNER_MOBILE_NUMBER);
     await sendOwnerSms({
       from,
       callSid,
       speech: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
       confidence,
     });
+    console.log("SMS_SENT_SUCCESS");
   } catch (err: any) {
     console.error("SMS_FAILED", err?.message ?? err);
   }
@@ -74,7 +105,6 @@ async function sendOwnerSms(payload: {
   speech: string;
   confidence: string;
 }) {
-
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
   const fromNumber = process.env.TWILIO_FROM_NUMBER!;
@@ -89,14 +119,13 @@ async function sendOwnerSms(payload: {
     `From: ${payload.from || "unknown"}\n` +
     `Msg: ${payload.speech.slice(0, 80)}`;
 
-
   const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       Authorization:
-        "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
+        "Basic " + Buffer.from(`${accountSid}:${authToken}` ).toString("base64"),
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
