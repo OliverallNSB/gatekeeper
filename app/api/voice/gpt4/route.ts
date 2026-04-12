@@ -47,6 +47,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check if caller is in trusted contacts
+    const { data: trustedContact } = await supabase
+      .from('trusted_contacts')
+      .select('*')
+      .eq('phone_number', fromNumber)
+      .single();
+
+    if (trustedContact) {
+      console.log('TRUSTED_CONTACT_DETECTED - Forwarding to owner');
+      
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say('Transferring your call.');
+      twiml.dial(ownerMobileNumber);
+
+      return new NextResponse(twiml.toString(), {
+        headers: { 'Content-Type': 'application/xml' },
+      });
+    }
+
     // AI screening enabled - proceed with normal flow
     const twiml = new twilio.twiml.VoiceResponse();
 
