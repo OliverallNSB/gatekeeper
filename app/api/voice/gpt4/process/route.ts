@@ -177,15 +177,16 @@ export async function POST(req: Request) {
     }
 
     // Build response TwiML
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">${escapeXml(aiResponse)}</Say>
   ${
     urgent
       ? `<Dial>${process.env.OWNER_MOBILE_NUMBER}</Dial>`
-      : "<Record />"
+      : '<Record maxLength="60" />'
   }
 </Response>`;
+
 
     console.log("TRIAGE_RESPONSE", { urgent, decision: urgent ? "transfer" : "voicemail" });
 
