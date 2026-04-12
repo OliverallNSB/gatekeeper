@@ -51,18 +51,16 @@ export async function POST(request: NextRequest) {
     const twiml = new twilio.twiml.VoiceResponse();
 
     // Gather speech input
-      const gather = twiml.gather({
-    input: ['speech'],
-    timeout: 10,
-    speechTimeout: 'auto',
-    maxSpeechTime: 60,
-    action: `${process.env.NGROK_URL || 'https://gatekeeper-weld.vercel.app'}/api/voice/gpt4/process`,
-    method: 'POST',
-      } );
+    const gather = twiml.gather({
+      input: ['speech'],
+      timeout: 10,
+      speechTimeout: 'auto',
+      maxSpeechTime: 60,
+      action: `${process.env.NGROK_URL || 'https://gatekeeper-weld.vercel.app'}/api/voice/gpt4/process`,
+      method: 'POST',
+    } );
 
     gather.say('Thank you for calling. Please tell us the reason for your call.');
-
-    twiml.redirect(`${process.env.NGROK_URL || 'https://gatekeeper-weld.vercel.app'}/api/voice/gpt4` );
 
     return new NextResponse(twiml.toString(), {
       headers: { 'Content-Type': 'application/xml' },
