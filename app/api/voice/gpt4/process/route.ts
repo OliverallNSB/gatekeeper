@@ -183,7 +183,9 @@ export async function POST(req: Request) {
   ${
     urgent
       ? `<Dial>${process.env.OWNER_MOBILE_NUMBER}</Dial>`
-      : '<Record maxLength="60" finishOnKey="#" /><Say>Thank you. Goodbye.</Say><Hangup />'
+
+     : '<Record maxLength="60" finishOnKey="#" action="https://gatekeeper-weld.vercel.app/api/voice/hangup" />'
+
   }
 </Response>`;
 
