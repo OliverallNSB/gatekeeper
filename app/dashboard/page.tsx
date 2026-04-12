@@ -97,7 +97,7 @@ export default function DashboardPage() {
           
         <div className="flex items-center gap-4">
   <button
-    onClick={() => router.push('/contacts')}
+    onClick={() => router.push('/whitelist')}
     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium"
   >
     👥 Contacts
