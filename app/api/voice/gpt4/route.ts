@@ -47,12 +47,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if caller is in trusted contacts
-    const { data: trustedContact } = await supabase
-      .from('trusted_contacts')
-      .select('*')
-      .eq('phone_number', fromNumber)
-      .single();
+    // Normalize phone numbers for comparison (remove all non-digits, add +1 prefix)
+const normalizePhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, '');
+  return '+1' + digits.slice(-10); // Get last 10 digits and add +1
+};
+
+const normalizedFromNumber = normalizePhone(fromNumber);
+const { data: trustedContacts } = await supabase
+  .from('trusted_contacts')
+  .select('*');
+
+const trustedContact = trustedContacts?.find(contact => 
+  normalizePhone(contact.phone_number) === normalizedFromNumber
+);
+
 
     if (trustedContact) {
       console.log('TRUSTED_CONTACT_DETECTED - Forwarding to owner');
