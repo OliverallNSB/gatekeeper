@@ -15,7 +15,7 @@ interface TrustedContact {
   created_at: string;
 }
 
-export default function ContactsPage() {
+export default function WhitelistPage() {
   const router = useRouter();
   const [contacts, setContacts] = useState<TrustedContact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,16 +42,24 @@ export default function ContactsPage() {
   const loadContacts = async (token: string) => {
     try {
       const response = await fetch('/api/contacts', {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) throw new Error('Failed to load contacts');
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Response:', text);
+        throw new Error(`Failed to load contacts: ${response.status}`);
+      }
+      
       const data = await response.json();
       setContacts(data);
     } catch (error) {
       console.error('Error loading contacts:', error);
+      setError('Failed to load contacts');
     } finally {
       setLoading(false);
     }
@@ -106,6 +114,7 @@ export default function ContactsPage() {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
 
