@@ -25,7 +25,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        window.location.href = 'https://appgatekeeper.net/app';
+        router.push('/dashboard');
       }
     } catch (err) {
       setError('An error occurred');

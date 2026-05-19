@@ -35,7 +35,7 @@ export default function DashboardPage() {
         router.push('/login');
         return;
       }
-      setUser(session.user);
+      setUser(null);
       loadCalls();
     };
 
