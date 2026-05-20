@@ -64,15 +64,15 @@ export async function POST(req: Request) {
     console.error("SMS_FAILED", err?.message ?? err);
   }
 
-  const owner = process.env.OWNER_MOBILE_NUMBER || "";
+  const transferTo = process.env.TRANSFER_TO_NUMBER || "";
   const urgent = isUrgent(speech);
 
   // If urgent, forward call to you
-  if (urgent && owner) {
+  if (urgent && transferTo) {
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">One moment. Connecting you now.</Say>
-  <Dial>${escapeXml(owner)}</Dial>
+  <Dial>${escapeXml(transferTo)}</Dial>
 </Response>`);
   }
 
