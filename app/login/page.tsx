@@ -25,7 +25,9 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
+        await supabase.auth.getSession();
         router.push('/dashboard');
+        router.refresh();
       }
     } catch (err) {
       setError('An error occurred');
