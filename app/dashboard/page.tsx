@@ -35,9 +35,9 @@ export default function DashboardPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      console.log("No session yet");
-      return;
-    }
+  router.push('/login');
+  return;
+}
 
     setUser(session.user);
     loadCalls();
