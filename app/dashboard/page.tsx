@@ -29,18 +29,22 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-      setUser(null);
-      loadCalls();
-    };
+  const checkAuth = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    checkAuth();
-  }, [router]);
+    if (!session) {
+      console.log("No session yet");
+      return;
+    }
+
+    setUser(session.user);
+    loadCalls();
+  };
+
+  checkAuth();
+}, []);
 
   const loadCalls = async () => {
     try {
