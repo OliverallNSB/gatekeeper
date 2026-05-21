@@ -8,7 +8,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-interface TrustedContact {
+interface whitelist {
   id: string;
   contact_name: string;
   phone_number: string;
@@ -17,7 +17,7 @@ interface TrustedContact {
 
 export default function WhitelistPage() {
   const router = useRouter();
-  const [contacts, setContacts] = useState<TrustedContact[]>([]);
+  const [contacts, setContacts] = useState<whitelist[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [contactName, setContactName] = useState('');
