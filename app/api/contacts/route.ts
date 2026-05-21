@@ -1,31 +1,40 @@
-import { createClient } from '@supabase/supabase-js';
-import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from "next/server";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// GET all trusted contacts for user
+function getTable(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const list = searchParams.get("list");
+
+  return list === "blacklist" ? "blacklist" : "whitelist";
+}
+
+// GET contacts
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const table = getTable(request);
+
+    const authHeader = request.headers.get("authorization");
     if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace("Bearer ", "");
     const { data: user, error: userError } = await supabase.auth.getUser(token);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (userError || !user?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data, error } = await supabase
-      .from("whitelist")
-      .select('*')
-      .eq('user_id', user.user.id)
-      .order('created_at', { ascending: false });
+      .from(table)
+      .select("*")
+      .eq("user_id", user.user.id)
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -33,35 +42,37 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Contacts GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Contacts GET error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// POST add new trusted contact
+// POST add contact
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const table = getTable(request);
+
+    const authHeader = request.headers.get("authorization");
     if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace("Bearer ", "");
     const { data: user, error: userError } = await supabase.auth.getUser(token);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (userError || !user?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const { contact_name, phone_number } = body;
 
     if (!contact_name || !phone_number) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const { data, error } = await supabase
-      .from("whitelist")
+      .from(table)
       .insert({
         user_id: user.user.id,
         contact_name,
@@ -76,38 +87,40 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Contacts POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Contacts POST error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// DELETE remove trusted contact
+// DELETE remove contact
 export async function DELETE(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const table = getTable(request);
+
+    const authHeader = request.headers.get("authorization");
     if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace("Bearer ", "");
     const { data: user, error: userError } = await supabase.auth.getUser(token);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (userError || !user?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const contactId = searchParams.get('id');
+    const contactId = searchParams.get("id");
 
     if (!contactId) {
-      return NextResponse.json({ error: 'Missing contact id' }, { status: 400 });
+      return NextResponse.json({ error: "Missing contact id" }, { status: 400 });
     }
 
     const { error } = await supabase
-      .from("whitelist")
+      .from(table)
       .delete()
-      .eq('id', contactId)
-      .eq('user_id', user.user.id);
+      .eq("id", contactId)
+      .eq("user_id", user.user.id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -115,7 +128,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Contacts DELETE error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Contacts DELETE error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
