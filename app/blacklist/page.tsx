@@ -110,7 +110,7 @@ export default function BlacklistPage() {
   const handleDeleteContact = async (contactId: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(`//api/contacts?list=blacklist?id=${contactId}`, {
+      const response = await fetch(`/api/contacts?list=blacklist&id=${contactId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
