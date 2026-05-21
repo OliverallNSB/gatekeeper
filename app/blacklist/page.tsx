@@ -243,8 +243,8 @@ export default function BlacklistPage() {
         <div className="mt-8 bg-cyan-900 border border-cyan-700 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-cyan-100 mb-2">📞 How It Works</h3>
           <p className="text-cyan-200">
-            When someone from your Blocked Numbers calls, they'll be transferred directly to you without AI screening. 
-            This is perfect for family, close friends, and important clients.
+            When a blocked number calls, Gatekeeper will automatically reject the call or 
+            send it directly to voicemail without bothering you.
           </p>
         </div>
       </div>
