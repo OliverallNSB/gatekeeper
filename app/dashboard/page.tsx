@@ -100,6 +100,13 @@ export default function DashboardPage() {
           </div>
           
         <div className="flex items-center gap-4">
+<button
+  onClick={() => router.push('/blacklist')}
+  className="px-4 py-2 bg-red-900 hover:bg-red-800 text-red-100 rounded-lg transition"
+>
+  Blacklist
+</button>
+
   <button
     onClick={() => router.push('/whitelist')}
     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium"
