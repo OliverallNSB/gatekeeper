@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data, error } = await supabase
-      .from('trusted_contacts')
+      .from("whitelist")
       .select('*')
       .eq('user_id', user.user.id)
       .order('created_at', { ascending: false });
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await supabase
-      .from('trusted_contacts')
+      .from("whitelist")
       .insert({
         user_id: user.user.id,
         contact_name,
@@ -104,7 +104,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { error } = await supabase
-      .from('trusted_contacts')
+      .from("whitelist")
       .delete()
       .eq('id', contactId)
       .eq('user_id', user.user.id);

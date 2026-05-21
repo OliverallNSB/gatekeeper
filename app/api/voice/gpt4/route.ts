@@ -55,7 +55,7 @@ const normalizePhone = (phone: string) => {
 
 const normalizedFromNumber = normalizePhone(fromNumber);
 const { data: trustedContacts } = await supabase
-  .from('trusted_contacts')
+  .from("whitelist")
   .select('*');
 
 const trustedContact = trustedContacts?.find(contact => 
