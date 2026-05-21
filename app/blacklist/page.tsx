@@ -139,7 +139,7 @@ export default function WhitelistPage() {
       <div className="bg-slate-950 border-b border-slate-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Trusted Contacts</h1>
+            <h1 className="text-3xl font-bold text-white">Blocked Numbers</h1>
             <p className="text-slate-400 mt-1">Whitelist numbers that bypass AI screening</p>
           </div>
           <button
@@ -155,7 +155,7 @@ export default function WhitelistPage() {
       <div className="max-w-6xl mx-auto px-6 py-12">
         {/* Add Contact Form */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">Add Trusted Contact</h2>
+          <h2 className="text-xl font-semibold text-white mb-4">Add Blocked Number</h2>
           
           {error && (
             <div className="mb-4 p-3 bg-red-900 border border-red-700 rounded text-red-200 text-sm">
@@ -205,13 +205,13 @@ export default function WhitelistPage() {
         <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
           <div className="p-6 border-b border-slate-700">
             <h2 className="text-xl font-semibold text-white">
-              Your Trusted Contacts ({contacts.length})
+              Your Blocked Numbers ({contacts.length})
             </h2>
           </div>
 
           {contacts.length === 0 ? (
             <div className="p-8 text-center text-slate-400">
-              No trusted contacts yet. Add one to get started!
+              No Blocked Numbers yet. Add one to get started!
             </div>
           ) : (
             <div className="divide-y divide-slate-700">
@@ -243,7 +243,7 @@ export default function WhitelistPage() {
         <div className="mt-8 bg-cyan-900 border border-cyan-700 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-cyan-100 mb-2">📞 How It Works</h3>
           <p className="text-cyan-200">
-            When someone from your trusted contacts calls, they'll be transferred directly to you without AI screening. 
+            When someone from your Blocked Numbers calls, they'll be transferred directly to you without AI screening. 
             This is perfect for family, close friends, and important clients.
           </p>
         </div>
