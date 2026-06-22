@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -42,27 +42,25 @@ export default function DashboardPage() {
       }
 
       setUser(session.user);
-      loadCalls();
+
+      try {
+        const { data, error } = await supabase
+          .from('call_sessions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setCalls(data || []);
+      } catch (error) {
+        console.error('Error loading calls:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    checkAuth();
+    init();
   }, []);
-
-  const loadCalls = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('call_sessions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCalls(data || []);
-    } catch (error) {
-      console.error('Error loading calls:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const toggleCallSelection = (id: string) => {
     setSelectedCalls((prev) =>
@@ -85,6 +83,7 @@ export default function DashboardPage() {
       const { error } = await supabase
         .from('call_sessions')
         .delete()
+        .eq('user_id', user.id)
         .in('id', selectedCalls);
 
       if (error) throw error;

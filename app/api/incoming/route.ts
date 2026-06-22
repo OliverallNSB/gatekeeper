@@ -7,15 +7,17 @@ export async function POST(req: Request) {
   const callSid = (form.get("CallSid") ?? "").toString();
   const to = (form.get("To") ?? "").toString();
 
-  const transferTo = process.env.TRANSFER_TO_NUMBER || "";
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const isBlocked = await numberExists(supabase, "blacklist", from);
-  const isWhitelisted = await numberExists(supabase, "whitelist", from);
+  const owner = await resolveOwner(supabase, to);
+  const userId = owner?.user_id ?? null;
+  const transferTo = owner?.owner_phone_number || process.env.TRANSFER_TO_NUMBER || "";
+
+  const isBlocked = await numberExists(supabase, "blacklist", from, userId);
+  const isWhitelisted = await numberExists(supabase, "whitelist", from, userId);
 
   if (isBlocked) {
     await logCall(supabase, {
@@ -24,6 +26,7 @@ export async function POST(req: Request) {
       to,
       reason: "[blocked number]",
       decision: "blocked",
+      userId,
     });
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
@@ -40,6 +43,7 @@ export async function POST(req: Request) {
       to,
       reason: "[trusted contact - bypassed screening]",
       decision: "transferred",
+      userId,
     });
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
@@ -73,8 +77,19 @@ function xml(twiml: string) {
   });
 }
 
-async function numberExists(supabase: any, table: "whitelist" | "blacklist", from: string) {
-  const { data, error } = await supabase.from(table).select("phone_number");
+async function resolveOwner(supabase: any, toNumber: string) {
+  const { data } = await supabase
+    .from("user_settings")
+    .select("user_id, owner_phone_number")
+    .eq("twilio_phone_number", toNumber)
+    .single();
+  return data as { user_id: string; owner_phone_number: string } | null;
+}
+
+async function numberExists(supabase: any, table: "whitelist" | "blacklist", from: string, userId: string | null) {
+  let query = supabase.from(table).select("phone_number");
+  if (userId) query = query.eq("user_id", userId);
+  const { data, error } = await query;
 
   if (error) {
     console.error(`${table.toUpperCase()}_CHECK_ERROR`, error);
@@ -94,6 +109,7 @@ async function logCall(
     to: string;
     reason: string;
     decision: string;
+    userId: string | null;
   }
 ) {
   const { error } = await supabase.from("call_sessions").insert({
@@ -103,6 +119,7 @@ async function logCall(
     caller_reason: payload.reason,
     status: "completed",
     decision: payload.decision,
+    user_id: payload.userId,
   });
 
   if (error) console.error("CALL_LOG_ERROR", error);

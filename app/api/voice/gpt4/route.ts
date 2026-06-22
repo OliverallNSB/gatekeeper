@@ -9,7 +9,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const accountSid = process.env.TWILIO_ACCOUNT_SID!;
 const authToken = process.env.TWILIO_AUTH_TOKEN!;
 const twilioFromNumber = process.env.TWILIO_FROM_NUMBER!;
-const ownerMobileNumber = process.env.OWNER_MOBILE_NUMBER!;
 
 const client = twilio(accountSid, authToken);
 
@@ -27,20 +26,23 @@ export async function POST(request: NextRequest) {
       to: toNumber,
     } );
 
-    // Get user settings from Supabase
+    // Get user settings by matching the Twilio number that was called
     const { data: userSettings } = await supabase
       .from('user_settings')
-      .select('ai_screening_enabled, owner_phone_number')
+      .select('user_id, ai_screening_enabled, owner_phone_number')
+      .eq('twilio_phone_number', toNumber)
       .single();
 
     console.log('USER_SETTINGS', userSettings);
 
+    const ownerPhone = userSettings?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
+
     // If AI screening is disabled, forward call directly to owner
     if (userSettings && !userSettings.ai_screening_enabled) {
       console.log('AI_SCREENING_DISABLED - Forwarding to owner');
-      
+
       const twiml = new twilio.twiml.VoiceResponse();
-      twiml.dial(ownerMobileNumber);
+      twiml.dial(ownerPhone);
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },
@@ -54,11 +56,12 @@ const normalizePhone = (phone: string) => {
 };
 
 const normalizedFromNumber = normalizePhone(fromNumber);
-const { data: trustedContacts } = await supabase
-  .from("whitelist")
-  .select('*');
+const userId = userSettings?.user_id;
+let whitelistQuery = supabase.from("whitelist").select('*');
+if (userId) whitelistQuery = whitelistQuery.eq('user_id', userId);
+const { data: trustedContacts } = await whitelistQuery;
 
-const trustedContact = trustedContacts?.find(contact => 
+const trustedContact = trustedContacts?.find(contact =>
   normalizePhone(contact.phone_number) === normalizedFromNumber
 );
 
@@ -68,7 +71,7 @@ const trustedContact = trustedContacts?.find(contact =>
       
       const twiml = new twilio.twiml.VoiceResponse();
       twiml.say('Transferring your call.');
-      twiml.dial(ownerMobileNumber);
+      twiml.dial(ownerPhone);
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },

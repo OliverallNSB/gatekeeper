@@ -23,13 +23,16 @@ export async function POST(req: Request) {
 
   console.log("TRIAGE", { callSid, from, speech, confidence, digits });
 
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const owner = await resolveOwner(supabase, to);
+  const userId = owner?.user_id ?? null;
+  const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
+
   // Save to Supabase
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     const urgent = isUrgent(speech);
 
     const { error } = await supabase.from("call_sessions").insert({
@@ -39,6 +42,7 @@ export async function POST(req: Request) {
       caller_reason: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
       status: "completed",
       decision: urgent ? "transferred" : "voicemail",
+      user_id: userId,
     });
 
     if (error) {
@@ -52,19 +56,20 @@ export async function POST(req: Request) {
 
   // SMS owner (best effort)
   try {
-    console.log("SENDING_SMS_TO", process.env.OWNER_MOBILE_NUMBER);
+    console.log("SENDING_SMS_TO", ownerPhone);
     await sendOwnerSms({
       from,
       callSid,
       speech: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
       confidence,
+      to: ownerPhone,
     });
     console.log("SMS_SENT_SUCCESS");
   } catch (err: any) {
     console.error("SMS_FAILED", err?.message ?? err);
   }
 
-  const transferTo = process.env.TRANSFER_TO_NUMBER || "";
+  const transferTo = ownerPhone;
   const urgent = isUrgent(speech);
 
   // If urgent, forward call to you
@@ -88,6 +93,15 @@ export async function POST(req: Request) {
 </Response>`);
 }
 
+async function resolveOwner(supabase: any, toNumber: string) {
+  const { data } = await supabase
+    .from("user_settings")
+    .select("user_id, owner_phone_number")
+    .eq("twilio_phone_number", toNumber)
+    .single();
+  return data as { user_id: string; owner_phone_number: string } | null;
+}
+
 function isUrgent(text: string) {
   const t = (text || "").toLowerCase();
   return (
@@ -104,14 +118,15 @@ async function sendOwnerSms(payload: {
   callSid: string;
   speech: string;
   confidence: string;
+  to: string;
 }) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
   const fromNumber = process.env.TWILIO_FROM_NUMBER!;
-  const toNumber = process.env.OWNER_MOBILE_NUMBER!;
+  const toNumber = payload.to;
 
   if (!accountSid || !authToken || !fromNumber || !toNumber) {
-    throw new Error("Missing Twilio env vars (SID/TOKEN/FROM/TO).");
+    throw new Error("Missing Twilio env vars or owner phone number.");
   }
 
   const body =

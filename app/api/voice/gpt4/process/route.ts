@@ -36,6 +36,15 @@ IMPORTANT:
 
 Respond with ONLY the message you would say to the caller. Nothing else.`;
 
+async function resolveOwner(supabase: any, toNumber: string) {
+  const { data } = await supabase
+    .from("user_settings")
+    .select("user_id, owner_phone_number")
+    .eq("twilio_phone_number", toNumber)
+    .single();
+  return data as { user_id: string; owner_phone_number: string } | null;
+}
+
 function isUrgent(text: string): boolean {
   const urgentKeywords = [
     "urgent",
@@ -101,6 +110,10 @@ export async function POST(req: Request) {
 
   console.log("GPT4_TRIAGE", { callSid, from, speech });
 
+  const owner = await resolveOwner(supabase, to);
+  const userId = owner?.user_id ?? null;
+  const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
+
   try {
     // Determine urgency
     const urgent = isUrgent(speech);
@@ -154,6 +167,7 @@ export async function POST(req: Request) {
             status: "completed",
             decision: urgent ? "transferred" : "voicemail",
             created_at: new Date().toISOString(),
+            user_id: userId,
           },
         ]);
 
@@ -169,7 +183,7 @@ export async function POST(req: Request) {
     // Send SMS notification
     try {
       await sendSMS({
-        to: process.env.OWNER_MOBILE_NUMBER!,
+        to: ownerPhone,
         body: `Gatekeeper alert\nFrom: ${from}\nMsg: ${speech.slice(0, 80)}`,
       });
     } catch (smsError) {
@@ -182,7 +196,7 @@ export async function POST(req: Request) {
   <Say voice="alice">${escapeXml(aiResponse)}</Say>
   ${
     urgent
-      ? `<Dial>${process.env.OWNER_MOBILE_NUMBER}</Dial>`
+      ? `<Dial>${escapeXml(ownerPhone)}</Dial>`
 
      : '<Record maxLength="60" finishOnKey="#" action="https://gatekeeper-weld.vercel.app/api/voice/hangup" />'
 
