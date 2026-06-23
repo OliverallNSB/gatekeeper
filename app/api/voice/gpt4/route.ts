@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       console.log('AI_SCREENING_DISABLED - Forwarding to owner');
 
       const twiml = new twilio.twiml.VoiceResponse();
-      twiml.dial(ownerPhone);
+      twiml.dial({ action: '/api/voice/hangup', method: 'POST' }).number(ownerPhone);
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },
@@ -71,7 +71,7 @@ const trustedContact = trustedContacts?.find(contact =>
       
       const twiml = new twilio.twiml.VoiceResponse();
       twiml.say('Transferring your call.');
-      twiml.dial(ownerPhone);
+      twiml.dial({ action: '/api/voice/hangup', method: 'POST' }).number(ownerPhone);
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },

@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">One moment. Connecting you now.</Say>
-  <Dial>${escapeXml(transferTo)}</Dial>
+  <Dial action="/api/voice/hangup" method="POST">${escapeXml(transferTo)}</Dial>
 </Response>`);
   }
 
