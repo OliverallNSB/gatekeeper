@@ -79,6 +79,21 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
+    if (body.owner_phone_number) {
+      const { data: current } = await supabase
+        .from('user_settings')
+        .select('twilio_phone_number')
+        .eq('user_id', user.user.id)
+        .single();
+      if (current?.twilio_phone_number &&
+          body.owner_phone_number.replace(/\D/g, '') === current.twilio_phone_number.replace(/\D/g, '')) {
+        return NextResponse.json(
+          { error: 'owner_phone_number must not be the same line that forwards into Twilio' },
+          { status: 400 }
+        );
+      }
+    }
+
     const { data, error } = await supabase
       .from('user_settings')
       .update({

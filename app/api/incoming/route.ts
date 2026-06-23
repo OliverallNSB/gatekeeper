@@ -82,13 +82,21 @@ function xml(twiml: string) {
   });
 }
 
+// twilio_phone_number: the Gatekeeper Twilio number that receives incoming calls.
+// owner_phone_number: a SEPARATE number where screened calls are transferred.
+// owner_phone_number must NOT be the phone line that forwards into Twilio — that creates a transfer loop.
 async function resolveOwner(supabase: any, toNumber: string) {
   const { data } = await supabase
     .from("user_settings")
-    .select("user_id, owner_phone_number")
+    .select("user_id, owner_phone_number, twilio_phone_number")
     .eq("twilio_phone_number", toNumber)
     .single();
-  return data as { user_id: string; owner_phone_number: string } | null;
+  if (!data) return null;
+  if (data.owner_phone_number?.replace(/\D/g, "") === data.twilio_phone_number?.replace(/\D/g, "")) {
+    console.error("LOOP_GUARD: owner_phone_number equals twilio_phone_number — transfer blocked");
+    return { ...data, owner_phone_number: null } as any;
+  }
+  return data as { user_id: string; owner_phone_number: string; twilio_phone_number: string } | null;
 }
 
 async function numberExists(supabase: any, table: "whitelist" | "blacklist", from: string, userId: string | null) {
