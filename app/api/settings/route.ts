@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         .insert({
           user_id: user.user.id,
           ai_screening_enabled: true,
-          sms_notifications_enabled: true,
+          sms_notifications_enabled: false,
           call_recording_enabled: false,
           voicemail_transcription_enabled: false,
           custom_routing_enabled: false,
@@ -116,6 +116,17 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Check if SMS is being enabled (false→true) so we can send opt-in confirmation
+    let smsWasOff = false;
+    if (updates.sms_notifications_enabled === true) {
+      const { data: before } = await supabase
+        .from('user_settings')
+        .select('sms_notifications_enabled, owner_phone_number')
+        .eq('user_id', user.user.id)
+        .single();
+      smsWasOff = !!before && !before.sms_notifications_enabled;
+    }
+
     const { data, error } = await supabase
       .from('user_settings')
       .update({
@@ -130,9 +141,44 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Send opt-in confirmation SMS when enabling notifications
+    if (smsWasOff && data?.owner_phone_number) {
+      try {
+        await sendOptInSms(data.owner_phone_number);
+      } catch (smsErr) {
+        console.error('OPT_IN_SMS_ERROR', smsErr);
+      }
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Settings PUT error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+async function sendOptInSms(to: string) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID!;
+  const authToken = process.env.TWILIO_AUTH_TOKEN!;
+  const fromNumber = process.env.TWILIO_FROM_NUMBER!;
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      From: fromNumber,
+      To: to,
+      Body: "Gatekeeper: SMS notifications enabled. You'll receive alerts when calls come in to your business line. Reply HELP for help, STOP to opt out. Msg&data rates may apply.",
+    }).toString(),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`SMS send failed: ${res.status}: ${text}`);
   }
 }

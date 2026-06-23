@@ -55,19 +55,34 @@ We use collected information to:
 
 ## SMS Notifications
 
-Users may elect to receive SMS notifications related to:
+When you enable SMS notifications in your account settings, we collect your phone number to deliver call screening alerts. These messages notify you of incoming calls, voicemails, and call transfers on your Gatekeeper-screened business line.
 
-* Incoming calls
-* Missed calls
+We use your phone number solely to send transactional account notifications related to your Gatekeeper service. We do not send marketing, promotional, or advertising messages via SMS.
+
+Your phone number is shared with our messaging provider, Twilio, solely for the purpose of delivering SMS messages. We do not sell, rent, or share your phone number with third parties for their marketing purposes.
+
+SMS notifications include:
+
+* Incoming call alerts
+* Missed call notifications
 * Voicemail alerts
-* Emergency transfer requests
+* Call transfer notifications
 * Account notifications
 
-Message frequency varies.
+Message frequency varies based on your incoming call volume. Message and data rates may apply.
 
-Message and data rates may apply.
+You may opt out of SMS notifications at any time by:
 
-Users may opt out of SMS notifications at any time through their account settings or by replying STOP where applicable.
+* Replying STOP to any Gatekeeper message
+* Disabling the SMS Notifications toggle in your account settings at https://appgatekeeper.net/setup
+
+You may reply HELP to any message for support information.
+
+To re-enable SMS notifications after opting out, reply START or enable the toggle in your account settings.
+
+Your phone number is retained as long as your account is active. Upon account deletion, your phone number is removed from our systems within 30 days.
+
+For SMS support, contact support@appgatekeeper.net.
 
 ## Information Sharing
 

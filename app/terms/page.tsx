@@ -32,24 +32,25 @@ Users agree to:
 
 Users are responsible for all activity occurring under their account.
 
-## SMS Communications
+## SMS Notifications & Consent
 
-By enabling SMS notifications, users consent to receive operational and transactional text messages related to:
+By enabling SMS Notifications in your Gatekeeper account settings, you consent to receive transactional text messages from Gatekeeper at the phone number you provide. These messages include:
 
-* Incoming calls
-* Missed calls
+* New incoming call alerts
+* Missed call notifications
 * Voicemail notifications
-* Emergency transfer requests
-* Account notifications
-* Service alerts
+* Call transfer notifications
+* Call summary notifications
 
-Message frequency varies.
+Gatekeeper does not send marketing, promotional, or advertising messages via SMS.
 
-Message and data rates may apply.
+Message frequency varies based on incoming call activity to your screened business line. Message and data rates may apply.
 
-Reply STOP to opt out.
+You may opt out at any time by replying STOP to any Gatekeeper message or by disabling SMS Notifications in your account settings at https://appgatekeeper.net/setup. Reply HELP to any message for support information. For additional help, contact support@appgatekeeper.net.
 
-Reply HELP for assistance.
+To re-enable after opting out, reply START or enable the toggle in your account settings.
+
+SMS messages are delivered via Twilio. Delivery is subject to carrier network availability and is not guaranteed. Gatekeeper is not responsible for messages delayed or undelivered due to carrier or network issues.
 
 ## Availability
 

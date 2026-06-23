@@ -119,6 +119,7 @@ export default function SetupPage() {
       label: 'SMS Notifications',
       description: 'Receive SMS alerts when calls come in.',
       icon: '📱',
+      consent: 'By enabling, you agree to receive transactional call alert messages. Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help.',
     },
     {
       key: 'call_recording_enabled' as const,
@@ -185,6 +186,9 @@ export default function SetupPage() {
                     <h3 className="text-xl font-semibold text-white">{feature.label}</h3>
                   </div>
                   <p className="text-slate-400">{feature.description}</p>
+                  {'consent' in feature && feature.consent && (
+                    <p className="text-xs text-slate-500 mt-2">{feature.consent}</p>
+                  )}
                 </div>
 
                 {/* Toggle Switch */}
