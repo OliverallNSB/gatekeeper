@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">Please hold while I connect you.</Say>
-  <Dial action="https://appgatekeeper.net/api/hangup" method="POST">${escapeXml(transferTo)}</Dial>
+  <Dial>${escapeXml(transferTo)}</Dial>
 </Response>`);
   }
 
