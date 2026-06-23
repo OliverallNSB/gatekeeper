@@ -198,10 +198,10 @@ export async function POST(req: Request) {
   <Say voice="alice">${escapeXml(aiResponse)}</Say>
   ${
     urgent
-      ? `<Dial action="${baseUrl}/api/voice/hangup" method="POST">${escapeXml(ownerPhone.trim())}</Dial>`
-
-     : '<Record maxLength="60" finishOnKey="#" action="https://gatekeeper-weld.vercel.app/api/voice/hangup" />'
-
+      ? `<Dial>${escapeXml(ownerPhone.trim())}</Dial>
+  <Say voice="alice">Thank you. Goodbye.</Say>
+  <Hangup/>`
+      : `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`
   }
 </Response>`;
 

@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
       console.log('AI_SCREENING_DISABLED - Forwarding to owner');
 
       const twiml = new twilio.twiml.VoiceResponse();
-      twiml.dial({ action: `${baseUrl}/api/voice/hangup`, method: 'POST' }).number(ownerPhone.trim());
+      twiml.dial(ownerPhone.trim());
+      twiml.say({ voice: 'alice' }, 'Thank you. Goodbye.');
+      twiml.hangup();
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },
@@ -70,10 +72,12 @@ const trustedContact = trustedContacts?.find(contact =>
 
     if (trustedContact) {
       console.log('TRUSTED_CONTACT_DETECTED - Forwarding to owner');
-      
+
       const twiml = new twilio.twiml.VoiceResponse();
       twiml.say('Transferring your call.');
-      twiml.dial({ action: `${baseUrl}/api/voice/hangup`, method: 'POST' }).number(ownerPhone.trim());
+      twiml.dial(ownerPhone.trim());
+      twiml.say({ voice: 'alice' }, 'Thank you. Goodbye.');
+      twiml.hangup();
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },
