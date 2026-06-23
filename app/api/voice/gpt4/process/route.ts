@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
+import { escapeXml } from "@/lib/phone";
+import { isUrgent } from "@/lib/urgency";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -39,35 +41,10 @@ Respond with ONLY the message you would say to the caller. Nothing else.`;
 async function resolveOwner(supabase: any, toNumber: string) {
   const { data } = await supabase
     .from("user_settings")
-    .select("user_id, owner_phone_number")
+    .select("user_id, owner_phone_number, sms_notifications_enabled")
     .eq("twilio_phone_number", toNumber)
     .single();
-  return data as { user_id: string; owner_phone_number: string } | null;
-}
-
-function isUrgent(text: string): boolean {
-  const urgentKeywords = [
-    "urgent",
-    "emergency",
-    "asap",
-    "critical",
-    "dying",
-    "accident",
-    "help",
-    "immediate",
-    "crisis",
-  ];
-  const lowerText = text.toLowerCase();
-  return urgentKeywords.some((keyword) => lowerText.includes(keyword));
-}
-
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  return data as { user_id: string; owner_phone_number: string; sms_notifications_enabled: boolean } | null;
 }
 
 async function sendSMS(options: { to: string; body: string }) {
@@ -115,6 +92,7 @@ export async function POST(req: Request) {
   const owner = await resolveOwner(supabase, to);
   const userId = owner?.user_id ?? null;
   const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
+  const smsEnabled = owner?.sms_notifications_enabled ?? true;
 
   try {
     // Determine urgency
@@ -182,14 +160,16 @@ export async function POST(req: Request) {
       console.error("SUPABASE_ERROR", dbError);
     }
 
-    // Send SMS notification
-    try {
-      await sendSMS({
-        to: ownerPhone,
-        body: `Gatekeeper alert\nFrom: ${from}\nMsg: ${speech.slice(0, 80)}`,
-      });
-    } catch (smsError) {
-      console.error("SMS_ERROR", smsError);
+    // Send SMS notification (only if enabled)
+    if (smsEnabled) {
+      try {
+        await sendSMS({
+          to: ownerPhone,
+          body: `Gatekeeper alert\nFrom: ${from}\nMsg: ${speech.slice(0, 80)}`,
+        });
+      } catch (smsError) {
+        console.error("SMS_ERROR", smsError);
+      }
     }
 
     // Build response TwiML

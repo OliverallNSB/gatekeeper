@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { normalizePhone, escapeXml } from "@/lib/phone";
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -138,15 +139,3 @@ async function logCall(
   if (error) console.error("CALL_LOG_ERROR", error);
 }
 
-function normalizePhone(phone: string) {
-  return (phone || "").replace(/\D/g, "");
-}
-
-function escapeXml(s: string) {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}

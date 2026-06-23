@@ -1,16 +1,11 @@
 import twilio from 'twilio';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { normalizePhone } from '@/lib/phone';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-const accountSid = process.env.TWILIO_ACCOUNT_SID!;
-const authToken = process.env.TWILIO_AUTH_TOKEN!;
-const twilioFromNumber = process.env.TWILIO_FROM_NUMBER!;
-
-const client = twilio(accountSid, authToken);
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,12 +47,6 @@ export async function POST(request: NextRequest) {
         headers: { 'Content-Type': 'application/xml' },
       });
     }
-
-    // Normalize phone numbers for comparison (remove all non-digits, add +1 prefix)
-const normalizePhone = (phone: string) => {
-  const digits = phone.replace(/\D/g, '');
-  return '+1' + digits.slice(-10); // Get last 10 digits and add +1
-};
 
 const normalizedFromNumber = normalizePhone(fromNumber);
 const userId = userSettings?.user_id;

@@ -79,14 +79,36 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
-    if (body.owner_phone_number) {
+    const ALLOWED_FIELDS = [
+      'ai_screening_enabled',
+      'sms_notifications_enabled',
+      'call_recording_enabled',
+      'voicemail_transcription_enabled',
+      'custom_routing_enabled',
+      'analytics_enabled',
+      'multi_user_enabled',
+      'owner_phone_number',
+      'twilio_phone_number',
+    ] as const;
+
+    const updates: Record<string, unknown> = {};
+    for (const key of ALLOWED_FIELDS) {
+      if (key in body) updates[key] = body[key];
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 });
+    }
+
+    if (updates.owner_phone_number) {
       const { data: current } = await supabase
         .from('user_settings')
         .select('twilio_phone_number')
         .eq('user_id', user.user.id)
         .single();
-      if (current?.twilio_phone_number &&
-          body.owner_phone_number.replace(/\D/g, '') === current.twilio_phone_number.replace(/\D/g, '')) {
+      const ownerDigits = String(updates.owner_phone_number).replace(/\D/g, '');
+      const twilioDigits = (current?.twilio_phone_number || '').replace(/\D/g, '');
+      if (twilioDigits && ownerDigits === twilioDigits) {
         return NextResponse.json(
           { error: 'owner_phone_number must not be the same line that forwards into Twilio' },
           { status: 400 }
@@ -97,7 +119,7 @@ export async function PUT(request: NextRequest) {
     const { data, error } = await supabase
       .from('user_settings')
       .update({
-        ...body,
+        ...updates,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', user.user.id)

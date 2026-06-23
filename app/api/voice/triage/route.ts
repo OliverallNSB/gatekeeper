@@ -2,6 +2,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { normalizePhone, escapeXml } from "@/lib/phone";
+import { isUrgent } from "@/lib/urgency";
 
 function xml(twiml: string) {
   return new NextResponse(twiml, {
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
   const owner = await resolveOwner(supabase, to);
   const userId = owner?.user_id ?? null;
   const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
+  const smsEnabled = owner?.sms_notifications_enabled ?? true;
 
   // Save to Supabase
   try {
@@ -56,19 +59,21 @@ export async function POST(req: Request) {
     console.error("SUPABASE_ERROR", err?.message ?? err);
   }
 
-  // SMS owner (best effort)
-  try {
-    console.log("SENDING_SMS_TO", ownerPhone);
-    await sendOwnerSms({
-      from,
-      callSid,
-      speech: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
-      confidence,
-      to: ownerPhone,
-    });
-    console.log("SMS_SENT_SUCCESS");
-  } catch (err: any) {
-    console.error("SMS_FAILED", err?.message ?? err);
+  // SMS owner (best effort, only if enabled)
+  if (smsEnabled) {
+    try {
+      console.log("SENDING_SMS_TO", ownerPhone);
+      await sendOwnerSms({
+        from,
+        callSid,
+        speech: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
+        confidence,
+        to: ownerPhone,
+      });
+      console.log("SMS_SENT_SUCCESS");
+    } catch (err: any) {
+      console.error("SMS_FAILED", err?.message ?? err);
+    }
   }
 
   const transferTo = ownerPhone;
@@ -101,21 +106,10 @@ export async function POST(req: Request) {
 async function resolveOwner(supabase: any, toNumber: string) {
   const { data } = await supabase
     .from("user_settings")
-    .select("user_id, owner_phone_number")
+    .select("user_id, owner_phone_number, sms_notifications_enabled")
     .eq("twilio_phone_number", toNumber)
     .single();
-  return data as { user_id: string; owner_phone_number: string } | null;
-}
-
-function isUrgent(text: string) {
-  const t = (text || "").toLowerCase();
-  return (
-    t.includes("urgent") ||
-    t.includes("emergency") ||
-    t.includes("asap") ||
-    t.includes("right away") ||
-    t.includes("immediately")
-  );
+  return data as { user_id: string; owner_phone_number: string; sms_notifications_enabled: boolean } | null;
 }
 
 async function sendOwnerSms(payload: {
@@ -159,11 +153,3 @@ async function sendOwnerSms(payload: {
   if (!res.ok) throw new Error(`Twilio SMS error ${res.status}: ${text}`);
 }
 
-function escapeXml(s: string) {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
