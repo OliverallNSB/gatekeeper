@@ -7,6 +7,8 @@ export async function POST(req: Request) {
   const callSid = (form.get("CallSid") ?? "").toString();
   const to = (form.get("To") ?? "").toString();
 
+  const baseUrl = process.env.NGROK_URL || new URL(req.url).origin;
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">Please hold while I connect you.</Say>
-  <Dial action="/api/voice/hangup" method="POST">${escapeXml(transferTo)}</Dial>
+  <Dial action="${baseUrl}/api/voice/hangup" method="POST">${escapeXml(transferTo.trim())}</Dial>
 </Response>`);
   }
 

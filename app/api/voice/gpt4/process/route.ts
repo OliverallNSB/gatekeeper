@@ -108,6 +108,8 @@ export async function POST(req: Request) {
   const from = (form.get("From") ?? "").toString();
   const to = (form.get("To") ?? "").toString();
 
+  const baseUrl = process.env.NGROK_URL || new URL(req.url).origin;
+
   console.log("GPT4_TRIAGE", { callSid, from, speech });
 
   const owner = await resolveOwner(supabase, to);
@@ -196,7 +198,7 @@ export async function POST(req: Request) {
   <Say voice="alice">${escapeXml(aiResponse)}</Say>
   ${
     urgent
-      ? `<Dial action="/api/voice/hangup" method="POST">${escapeXml(ownerPhone)}</Dial>`
+      ? `<Dial action="${baseUrl}/api/voice/hangup" method="POST">${escapeXml(ownerPhone.trim())}</Dial>`
 
      : '<Record maxLength="60" finishOnKey="#" action="https://gatekeeper-weld.vercel.app/api/voice/hangup" />'
 

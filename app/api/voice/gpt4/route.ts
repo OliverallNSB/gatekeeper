@@ -19,8 +19,10 @@ export async function POST(request: NextRequest) {
     const fromNumber = formData.get('From') as string;
     const toNumber = formData.get('To') as string;
 
+    const baseUrl = process.env.NGROK_URL || new URL(request.url).origin;
+
     console.log('GPT4_VOICE_ENDPOINT', {
-      baseUrl: `${process.env.NGROK_URL || 'https://gatekeeper-weld.vercel.app'}`,
+      baseUrl,
       callSid,
       from: fromNumber,
       to: toNumber,
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
       console.log('AI_SCREENING_DISABLED - Forwarding to owner');
 
       const twiml = new twilio.twiml.VoiceResponse();
-      twiml.dial({ action: '/api/voice/hangup', method: 'POST' }).number(ownerPhone);
+      twiml.dial({ action: `${baseUrl}/api/voice/hangup`, method: 'POST' }).number(ownerPhone.trim());
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },
@@ -71,7 +73,7 @@ const trustedContact = trustedContacts?.find(contact =>
       
       const twiml = new twilio.twiml.VoiceResponse();
       twiml.say('Transferring your call.');
-      twiml.dial({ action: '/api/voice/hangup', method: 'POST' }).number(ownerPhone);
+      twiml.dial({ action: `${baseUrl}/api/voice/hangup`, method: 'POST' }).number(ownerPhone.trim());
 
       return new NextResponse(twiml.toString(), {
         headers: { 'Content-Type': 'application/xml' },
@@ -87,7 +89,7 @@ const trustedContact = trustedContacts?.find(contact =>
       timeout: 10,
       speechTimeout: 'auto',
       maxSpeechTime: 60,
-      action: `${process.env.NGROK_URL || 'https://gatekeeper-weld.vercel.app'}/api/voice/gpt4/process`,
+      action: `${baseUrl}/api/voice/gpt4/process`,
       method: 'POST',
     } );
 
