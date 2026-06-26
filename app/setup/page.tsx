@@ -265,23 +265,32 @@ export default function SetupPage() {
           <div className="bg-slate-800 border border-slate-600 rounded-xl max-w-md w-full p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-4">Enable SMS Notifications</h2>
             <p className="text-slate-300 text-sm mb-3">
-              By enabling SMS Notifications, you consent to receive transactional SMS alerts
-              regarding activity on your Gatekeeper account.
+              Gatekeeper can send you transactional SMS notifications when calls are screened
+              on your business line. These notifications are optional and are not required to
+              use Gatekeeper.
             </p>
-            <p className="text-slate-300 text-sm font-semibold mb-4">
-              SMS notifications are disabled by default and are enabled only after your explicit consent.
+            <p className="text-slate-300 text-sm mb-2">
+              By clicking &quot;Enable SMS,&quot; you consent to receive the following text
+              messages from Gatekeeper:
             </p>
-            <p className="text-slate-400 text-sm mb-2">Examples include:</p>
             <ul className="text-slate-400 text-sm mb-4 space-y-1 pl-4">
               <li>Screened call alerts</li>
               <li>Voicemail notifications</li>
               <li>Emergency transfer notifications</li>
               <li>Account-related service notifications</li>
             </ul>
+            <p className="text-slate-400 text-sm mb-4">
+              Gatekeeper does not send marketing or promotional messages.
+            </p>
             <div className="bg-slate-900 rounded-lg p-3 mb-6">
               <p className="text-xs text-slate-500 leading-relaxed">
-                Message frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help.
-                View our <a href="/privacy" className="text-cyan-400 underline">Privacy Policy</a> and <a href="/terms" className="text-cyan-400 underline">Terms</a>.
+                Message frequency varies. Message and data rates may apply.
+                Reply STOP to opt out at any time. Reply HELP for help.
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                <a href="/privacy" className="text-cyan-400 underline">Privacy Policy</a>
+                {' '}&bull;{' '}
+                <a href="/terms" className="text-cyan-400 underline">Terms &amp; Conditions</a>
               </p>
             </div>
             <div className="flex gap-3 justify-end">

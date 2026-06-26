@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const STOP_KEYWORDS = ["stop", "unsubscribe", "cancel", "quit", "end"];
+const STOP_KEYWORDS = ["stop", "stopall", "unsubscribe", "cancel", "quit", "end"];
 const HELP_KEYWORDS = ["help", "info"];
 const START_KEYWORDS = ["start", "unstop", "subscribe"];
 

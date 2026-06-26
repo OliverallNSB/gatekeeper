@@ -54,39 +54,70 @@ export default function SmsConsentPage() {
         </p>
       </section>
 
-      {/* Screenshot Section */}
+      {/* Opt-In Flow */}
       <section className="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-6">Opt-In Flow Screenshots</h2>
+        <h2 className="text-xl font-semibold mb-6">Opt-In Flow</h2>
+        <p className="text-sm text-gray-600 mb-6">
+          The following steps show how an authenticated Gatekeeper account owner opts in to
+          SMS notifications. This flow occurs inside the Gatekeeper account settings dashboard,
+          which requires authentication.
+        </p>
 
         <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">Step 1 — Enable SMS Notifications</h3>
+          <h3 className="text-lg font-medium mb-1">Step 1 — Create Account</h3>
           <p className="text-sm text-gray-600 mb-4">
-            The authenticated account owner enables SMS Notifications from the Gatekeeper Settings page.
-            SMS notifications are OFF by default.
+            The user creates a Gatekeeper account at appgatekeeper.net/signup using their email
+            and password. No phone number is collected and no SMS consent occurs at this step.
+            Links to the Privacy Policy and Terms &amp; Conditions are displayed on the signup page.
           </p>
-          <div className="border border-gray-300 rounded-lg overflow-hidden">
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-1">Step 2 — Open SMS Settings</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            After signing in, the user navigates to the Settings page at appgatekeeper.net/setup.
+            The SMS Notifications toggle is <strong>OFF by default</strong>. The toggle description
+            reads: &quot;Receive transactional SMS alerts for screened calls, voicemails, and
+            emergency transfers.&quot;
+          </p>
+          <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
             <img
               src="/screenshots/sms-settings-toggle.png"
-              alt="Gatekeeper Settings page showing SMS Notifications toggle in the OFF position. The toggle is clearly labeled with a description explaining transactional SMS alerts for screened calls, voicemails, and emergency transfers."
+              alt="Gatekeeper Settings page showing the SMS Notifications toggle in the OFF position with description text."
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-1">Step 3 — Review Consent Dialog</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            When the user clicks the SMS toggle, a consent dialog appears before SMS is activated.
+            The dialog explains: the types of transactional messages, that SMS is optional and not
+            required to use Gatekeeper, that Gatekeeper does not send marketing messages, message
+            frequency and data rate disclosures, STOP and HELP instructions, and links to the
+            Privacy Policy and Terms &amp; Conditions.
+          </p>
+          <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+            <img
+              src="/screenshots/sms-consent-dialog.png"
+              alt="Gatekeeper SMS consent dialog showing consent language, message types, no-marketing statement, frequency and data rate disclosures, STOP/HELP instructions, Privacy Policy and Terms links, Cancel and Enable SMS buttons."
               className="w-full h-auto"
             />
           </div>
         </div>
 
         <div>
-          <h3 className="text-lg font-medium mb-2">Step 2 — Explicit Consent</h3>
+          <h3 className="text-lg font-medium mb-1">Step 4 — Confirm Consent</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Before SMS notifications are enabled, Gatekeeper presents a consent dialog explaining the types of
-            transactional messages, message frequency, STOP/HELP instructions, and links to the Privacy Policy
-            and Terms &amp; Conditions. SMS is enabled only after the user explicitly clicks &quot;Enable SMS.&quot;
+            The user clicks &quot;Enable SMS&quot; to confirm consent. Gatekeeper immediately sends
+            a confirmation SMS to the user&apos;s phone number: &quot;Gatekeeper: SMS notifications
+            enabled. You&apos;ll receive alerts when calls come in to your business line. Reply HELP
+            for help, STOP to opt out. Msg&amp;data rates may apply.&quot;
           </p>
-          <div className="border border-gray-300 rounded-lg overflow-hidden">
-            <img
-              src="/screenshots/sms-consent-dialog.png"
-              alt="Gatekeeper SMS consent dialog titled Enable SMS Notifications. Shows consent language, list of message types (screened call alerts, voicemail notifications, emergency transfer notifications, account-related service notifications), disclosure that SMS is disabled by default and enabled only after explicit consent, message frequency and data rate disclosures, STOP and HELP instructions, and links to Privacy Policy and Terms. Cancel and Enable SMS buttons at the bottom."
-              className="w-full h-auto"
-            />
-          </div>
+          <p className="text-sm text-gray-600">
+            If the user clicks &quot;Cancel,&quot; no changes are made and SMS remains disabled.
+          </p>
         </div>
       </section>
 
