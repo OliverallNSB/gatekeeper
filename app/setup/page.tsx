@@ -29,6 +29,7 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [showSmsConsent, setShowSmsConsent] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -64,6 +65,17 @@ export default function SetupPage() {
 
   const handleToggle = async (key: keyof UserSettings) => {
     if (!settings || !user) return;
+
+    if (key === 'sms_notifications_enabled' && !settings.sms_notifications_enabled) {
+      setShowSmsConsent(true);
+      return;
+    }
+
+    await saveToggle(key);
+  };
+
+  const saveToggle = async (key: keyof UserSettings) => {
+    if (!settings) return;
 
     const newValue = !settings[key];
     setSaving(true);
@@ -117,7 +129,7 @@ export default function SetupPage() {
     {
       key: 'sms_notifications_enabled' as const,
       label: 'SMS Notifications',
-      description: 'Receive SMS alerts when calls come in.',
+      description: 'Receive transactional SMS alerts for screened calls, voicemails, and emergency transfers.',
       icon: '📱',
       consent: 'By enabling, you agree to receive transactional call alert messages. Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help.',
     },
@@ -233,6 +245,63 @@ export default function SetupPage() {
           </p>
         </div>
       </div>
+
+      {/* Legal Footer */}
+      <div className="border-t border-slate-800 py-6">
+        <div className="max-w-6xl mx-auto px-6 flex flex-wrap gap-4 justify-center text-xs text-slate-500">
+          <a href="/privacy" className="hover:text-slate-300">Privacy Policy</a>
+          <span>|</span>
+          <a href="/terms" className="hover:text-slate-300">Terms &amp; Conditions</a>
+          <span>|</span>
+          <a href="/sms-consent" className="hover:text-slate-300">SMS Consent</a>
+          <span>|</span>
+          <a href="mailto:support@appgatekeeper.net" className="hover:text-slate-300">Support</a>
+        </div>
+      </div>
+
+      {/* SMS Consent Dialog */}
+      {showSmsConsent && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-slate-600 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-4">Enable SMS Notifications</h2>
+            <p className="text-slate-300 text-sm mb-4">
+              By enabling SMS Notifications, you consent to receive transactional SMS alerts
+              regarding activity on your Gatekeeper account.
+            </p>
+            <p className="text-slate-400 text-sm mb-2">Examples include:</p>
+            <ul className="text-slate-400 text-sm mb-4 space-y-1 pl-4">
+              <li>Screened call alerts</li>
+              <li>Voicemail notifications</li>
+              <li>Emergency transfer notifications</li>
+              <li>Account-related service notifications</li>
+            </ul>
+            <div className="bg-slate-900 rounded-lg p-3 mb-6">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Message frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help.
+                View our <a href="/privacy" className="text-cyan-400 underline">Privacy Policy</a> and <a href="/terms" className="text-cyan-400 underline">Terms</a>.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowSmsConsent(false)}
+                className="px-4 py-2 text-sm text-slate-300 bg-slate-700 hover:bg-slate-600 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setShowSmsConsent(false);
+                  await saveToggle('sms_notifications_enabled');
+                }}
+                disabled={saving}
+                className="px-4 py-2 text-sm font-semibold text-slate-950 bg-cyan-500 hover:bg-cyan-400 rounded-lg transition disabled:opacity-50"
+              >
+                Enable SMS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

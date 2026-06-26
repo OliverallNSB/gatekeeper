@@ -306,6 +306,19 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Legal Footer */}
+      <div className="border-t border-slate-800 py-6">
+        <div className="max-w-7xl mx-auto px-6 flex flex-wrap gap-4 justify-center text-xs text-slate-500">
+          <a href="/privacy" className="hover:text-slate-300">Privacy Policy</a>
+          <span>|</span>
+          <a href="/terms" className="hover:text-slate-300">Terms &amp; Conditions</a>
+          <span>|</span>
+          <a href="/sms-consent" className="hover:text-slate-300">SMS Consent</a>
+          <span>|</span>
+          <a href="mailto:support@appgatekeeper.net" className="hover:text-slate-300">Support</a>
+        </div>
+      </div>
     </div>
   );
 }
