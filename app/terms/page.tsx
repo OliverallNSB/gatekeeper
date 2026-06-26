@@ -52,6 +52,8 @@ To re-enable after opting out, reply START or enable the toggle in your account 
 
 SMS messages are delivered via Twilio. Delivery is subject to carrier network availability and is not guaranteed. Gatekeeper is not responsible for messages delayed or undelivered due to carrier or network issues.
 
+No mobile information will be shared with third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent will not be shared with any third parties, except for aggregators and providers of the text message services.
+
 ## Availability
 
 Gatekeeper strives to provide reliable service but does not guarantee uninterrupted operation.

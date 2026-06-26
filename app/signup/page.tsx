@@ -121,6 +121,13 @@ export default function SignupPage() {
             {loading ? 'Creating account...' : 'Sign up'}
           </button>
 
+          <p className="text-xs text-slate-500 text-center">
+            By signing up you agree to our{' '}
+            <a href="/terms" className="text-emerald-400 hover:text-emerald-300 underline">Terms &amp; Conditions</a>
+            {' '}and{' '}
+            <a href="/privacy" className="text-emerald-400 hover:text-emerald-300 underline">Privacy Policy</a>.
+          </p>
+
           <div className="text-center">
             <p className="text-sm text-slate-400">
               Already have an account?{' '}

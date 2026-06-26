@@ -98,6 +98,9 @@ export default function LandingPage() {
             <p className="text-slate-300">
               Get instant SMS alerts with caller info and reason for calling. Stay informed even when you're busy.
             </p>
+            <p className="text-slate-500 text-xs mt-3">
+              Transactional SMS alerts are sent only to account owners who opt in. Message frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out or HELP for help.
+            </p>
           </div>
         </div>
       </section>
@@ -170,26 +173,17 @@ export default function LandingPage() {
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Product</h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-teal-400">Features</a></li>
-                <li><a href="#" className="hover:text-teal-400">Pricing</a></li>
-                <li><a href="#" className="hover:text-teal-400">FAQ</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Company</h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-teal-400">About</a></li>
-                <li><a href="#" className="hover:text-teal-400">Blog</a></li>
-                <li><a href="#" className="hover:text-teal-400">Contact</a></li>
-              </ul>
-            </div>
-            <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-teal-400">Privacy</a></li>
-                <li><a href="#" className="hover:text-teal-400">Terms</a></li>
+                <li><a href="/privacy" className="hover:text-teal-400">Privacy Policy</a></li>
+                <li><a href="/terms" className="hover:text-teal-400">Terms &amp; Conditions</a></li>
+                <li><a href="/sms-consent" className="hover:text-teal-400">SMS Consent</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Support</h4>
+              <ul className="space-y-2 text-slate-400 text-sm">
+                <li><a href="mailto:support@appgatekeeper.net" className="hover:text-teal-400">support@appgatekeeper.net</a></li>
               </ul>
             </div>
           </div>

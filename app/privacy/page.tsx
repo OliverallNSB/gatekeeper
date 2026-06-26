@@ -80,7 +80,7 @@ To re-enable SMS notifications after opting out, reply START or re-enable SMS No
 
 Gatekeeper uses Twilio as its SMS delivery provider. Your phone number is shared with Twilio solely for the purpose of delivering SMS notifications.
 
-We do not sell, rent, or share your phone number with third parties for marketing purposes.
+We do not sell, rent, or share your phone number with third parties for marketing or promotional purposes. Text messaging originator opt-in data and consent will not be shared with any third parties, except for aggregators and providers of the text message services.
 
 Your phone number is retained only while your Gatekeeper account remains active. Upon account deletion, your phone number and associated SMS notification preferences are removed from our systems within 30 days unless a longer retention period is required by law.
 
@@ -97,7 +97,7 @@ Information may be shared with service providers necessary to operate the platfo
 * Payment processors
 * Analytics providers
 
-These providers are permitted to use information only as necessary to provide services to Gatekeeper.
+These providers are permitted to use information only as necessary to provide services to Gatekeeper. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
 
 ## Data Security
 
