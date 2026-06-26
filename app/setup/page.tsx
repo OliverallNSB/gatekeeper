@@ -264,9 +264,12 @@ export default function SetupPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 border border-slate-600 rounded-xl max-w-md w-full p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-4">Enable SMS Notifications</h2>
-            <p className="text-slate-300 text-sm mb-4">
+            <p className="text-slate-300 text-sm mb-3">
               By enabling SMS Notifications, you consent to receive transactional SMS alerts
               regarding activity on your Gatekeeper account.
+            </p>
+            <p className="text-slate-300 text-sm font-semibold mb-4">
+              SMS notifications are disabled by default and are enabled only after your explicit consent.
             </p>
             <p className="text-slate-400 text-sm mb-2">Examples include:</p>
             <ul className="text-slate-400 text-sm mb-4 space-y-1 pl-4">
