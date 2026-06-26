@@ -1,6 +1,8 @@
+import LegalPageLayout from '@/lib/LegalPageLayout';
+
 export default function SmsConsentPage() {
   return (
-    <main className="max-w-4xl mx-auto p-6">
+    <LegalPageLayout><main className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-2">Gatekeeper SMS Notification Program</h1>
       <p className="text-sm text-gray-500 mb-8">Last Updated: June 2026</p>
 
@@ -211,5 +213,6 @@ export default function SmsConsentPage() {
         <p className="text-sm text-gray-500 mt-2">Gatekeeper is a product of Nova Labs Digital LLC.</p>
       </section>
     </main>
+    </LegalPageLayout>
   );
 }

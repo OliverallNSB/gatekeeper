@@ -1,6 +1,8 @@
-export default function PrivacyPage() {
+import LegalPageLayout from '@/lib/LegalPageLayout';
+
+export default function TermsPage() {
   return (
-    <main className="max-w-4xl mx-auto p-6 whitespace-pre-wrap">
+    <LegalPageLayout><main className="max-w-4xl mx-auto p-6 whitespace-pre-wrap">
       {`
 # Terms & Conditions
 
@@ -91,5 +93,6 @@ Gatekeeper is a product of Nova Labs Digital LLC.
 
 `}
     </main>
+    </LegalPageLayout>
   );
 }
