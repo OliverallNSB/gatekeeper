@@ -16,28 +16,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const SYSTEM_PROMPT = `You are a professional receptionist for Gatekeeper, an AI call screening service.
+// Future direction: the receptionist name will be "Sarah" and greetings will include
+// the business name once business_name is added to user_settings in a later phase.
+const SYSTEM_PROMPT = `You are a professional front desk receptionist answering phone calls for a small business.
 
-Your role is to:
-1. Greet callers warmly and professionally
-2. Acknowledge what they said
-3. Determine if their call is URGENT
-4. Respond appropriately
+RULES:
+- Never identify yourself as AI, a bot, a virtual assistant, or an automated system
+- Never mention "Gatekeeper", "call screening", or how the system works
+- Speak naturally, as if you are a real person at the front desk
+- Keep your response to 1-2 sentences maximum
+- Be warm, confident, and professional
+- Do not ask follow-up questions
+- Do not offer additional help beyond acknowledging the caller
 
-URGENCY KEYWORDS (if caller mentions ANY of these, it's URGENT):
-- emergency, urgent, asap, critical, dying, accident, help, immediate, crisis, emergency
+IF THE CALL IS URGENT:
+Acknowledge their urgency briefly and let them know you will connect them immediately.
 
-RESPONSE GUIDELINES:
-- If URGENT: Say "I'll connect you right away" (keep it brief)
-- If NOT URGENT: Say "Thank you for calling. Your message will be recorded" (keep it brief)
+IF THE CALL IS NOT URGENT:
+Thank them for the information and let them know the message will be passed along promptly.
 
-IMPORTANT:
-- Keep your response under 20 seconds
-- Be professional but friendly
-- Never be dismissive
-- Always be helpful
-
-Respond with ONLY the message you would say to the caller. Nothing else.`;
+Respond with ONLY the spoken message. No labels, no formatting, no explanation.`;
 
 
 async function sendSMS(options: { to: string; body: string }) {
@@ -105,11 +103,11 @@ export async function POST(req: Request) {
           },
           {
             role: "user",
-            content: `Caller said: "${speech}". Is this urgent? ${
+            content: `The caller said: "${speech}". ${
               urgent
-                ? "YES - This is urgent. Respond with urgency."
-                : "NO - This is not urgent. Respond professionally."
-            }. Give a brief response (under 20 seconds of speech).`,
+                ? "This is urgent. Let them know you'll connect them immediately."
+                : "This is not urgent. Acknowledge their message professionally."
+            } Respond in 1-2 sentences.`,
           },
         ],
         max_tokens: 100,
