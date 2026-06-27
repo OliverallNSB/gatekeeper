@@ -7,6 +7,7 @@ import { escapeXml } from "@/lib/phone";
 import { isUrgent } from "@/lib/urgency";
 import { resolveOwner } from "@/lib/resolve-owner";
 import { extractCallerName } from "@/lib/extract-name";
+import { classifyCall } from "@/lib/classify-call";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -45,8 +46,9 @@ Thank them for the information and let them know the message will be passed alon
 
 If the caller provided their name, use it naturally in your response (e.g. "Thank you, Sarah.").
 
-Respond in JSON format: {"message": "your spoken response", "caller_name": "first name or null"}
-Extract the caller's first name if they provided one. If no name was given, set caller_name to null.`;
+Respond in JSON format: {"message": "your spoken response", "caller_name": "first name or null", "call_category": "category"}
+Extract the caller's first name if they provided one. If no name was given, set caller_name to null.
+Classify the call into one of: emergency, existing_customer, new_customer, appointment, vendor_sales, spam, general.`;
 }
 
 
@@ -106,6 +108,7 @@ export async function POST(req: Request) {
     const defaultResponse = "Thank you for calling. I'll make sure your message gets passed along right away.";
     let aiResponse = defaultResponse;
     let callerName: string | null = extractCallerName(speech);
+    let callCategory: string = classifyCall(speech);
 
     try {
       const completion = await openai.chat.completions.create({
@@ -121,7 +124,7 @@ export async function POST(req: Request) {
               urgent
                 ? "This is urgent. Let them know you'll connect them immediately."
                 : "This is not urgent. Acknowledge their message professionally."
-            } Respond in JSON: {"message": "...", "caller_name": "..."}`,
+            } Respond in JSON: {"message": "...", "caller_name": "...", "call_category": "..."}`,
           },
         ],
         max_tokens: 150,
@@ -135,10 +138,13 @@ export async function POST(req: Request) {
         if (parsed.caller_name && parsed.caller_name !== "null") {
           callerName = parsed.caller_name;
         }
+        if (parsed.call_category && parsed.call_category !== "null") {
+          callCategory = parsed.call_category;
+        }
       } catch {
         aiResponse = raw || defaultResponse;
       }
-      console.log("GPT4_RESPONSE", { aiResponse, callerName });
+      console.log("GPT4_RESPONSE", { aiResponse, callerName, callCategory });
     } catch (gptError) {
       console.error("GPT4_ERROR", gptError);
       aiResponse = urgent
@@ -157,6 +163,7 @@ export async function POST(req: Request) {
             to_number: to,
             caller_reason: speech,
             caller_name: callerName,
+            call_category: callCategory,
             status: "completed",
             decision: urgent ? "transferred" : "voicemail",
             created_at: new Date().toISOString(),
@@ -177,9 +184,10 @@ export async function POST(req: Request) {
     if (smsEnabled) {
       try {
         const smsFrom = callerName ? `${callerName} (${from})` : from;
+        const categoryLabel = callCategory.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
         await sendSMS({
           to: ownerPhone,
-          body: `New call from ${smsFrom}\nReason: ${speech.slice(0, 80)}\nDecision: ${urgent ? "Transferred" : "Message taken"}`,
+          body: `New call from ${smsFrom}\nCategory: ${categoryLabel}\nReason: ${speech.slice(0, 70)}\nDecision: ${urgent ? "Transferred" : "Message taken"}`,
         });
       } catch (smsError) {
         console.error("SMS_ERROR", smsError);

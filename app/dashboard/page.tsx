@@ -17,6 +17,7 @@ interface CallSession {
   caller_name: string | null;
   caller_reason: string;
   decision: string;
+  call_category: string | null;
   recording_url: string | null;
   created_at: string;
   updated_at: string;

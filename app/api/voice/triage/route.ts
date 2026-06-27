@@ -6,6 +6,7 @@ import { escapeXml } from "@/lib/phone";
 import { isUrgent } from "@/lib/urgency";
 import { resolveOwner } from "@/lib/resolve-owner";
 import { extractCallerName } from "@/lib/extract-name";
+import { classifyCall } from "@/lib/classify-call";
 
 function xml(twiml: string) {
   return new NextResponse(twiml, {
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
   const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
   const smsEnabled = owner?.sms_notifications_enabled ?? true;
   const callerName = extractCallerName(speech);
+  const callCategory = classifyCall(speech);
 
   // Save to Supabase
   try {
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
       to_number: to,
       caller_reason: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
       caller_name: callerName,
+      call_category: callCategory,
       status: "completed",
       decision: urgent ? "transferred" : "voicemail",
       user_id: userId,
@@ -72,6 +75,7 @@ export async function POST(req: Request) {
         confidence,
         to: ownerPhone,
         callerName,
+        callCategory,
       });
       console.log("SMS_SENT_SUCCESS");
     } catch (err: any) {
@@ -111,6 +115,7 @@ async function sendOwnerSms(payload: {
   confidence: string;
   to: string;
   callerName: string | null;
+  callCategory: string;
 }) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
@@ -122,9 +127,11 @@ async function sendOwnerSms(payload: {
   }
 
   const smsFrom = payload.callerName ? `${payload.callerName} (${payload.from})` : (payload.from || "unknown");
+  const categoryLabel = payload.callCategory.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   const body =
     `New call from ${smsFrom}\n` +
-    `Reason: ${payload.speech.slice(0, 80)}`;
+    `Category: ${categoryLabel}\n` +
+    `Reason: ${payload.speech.slice(0, 70)}`;
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 

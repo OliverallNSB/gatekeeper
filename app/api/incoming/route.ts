@@ -31,6 +31,7 @@ export async function POST(req: Request) {
       reason: "[blocked number]",
       decision: "blocked",
       userId,
+      callCategory: "spam",
     });
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
       reason: "[trusted contact - bypassed screening]",
       decision: "transferred",
       userId,
+      callCategory: "existing_customer",
     });
 
     const whitelistGreeting = owner?.business_name
@@ -118,6 +120,7 @@ async function logCall(
     decision: string;
     userId: string | null;
     callerName?: string | null;
+    callCategory?: string | null;
   }
 ) {
   const { error } = await supabase.from("call_sessions").insert({
@@ -126,6 +129,7 @@ async function logCall(
     to_number: payload.to,
     caller_reason: payload.reason,
     caller_name: payload.callerName ?? null,
+    call_category: payload.callCategory ?? null,
     status: "completed",
     decision: payload.decision,
     user_id: payload.userId,
