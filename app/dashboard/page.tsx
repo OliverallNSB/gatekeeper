@@ -23,6 +23,36 @@ interface CallSession {
   updated_at: string;
 }
 
+const CATEGORY_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+  emergency:         { label: 'Emergency',         bg: 'bg-red-900',    text: 'text-red-200' },
+  appointment:       { label: 'Appointment',       bg: 'bg-green-900',  text: 'text-green-200' },
+  existing_customer: { label: 'Existing Customer', bg: 'bg-blue-900',   text: 'text-blue-200' },
+  new_customer:      { label: 'New Customer',      bg: 'bg-purple-900', text: 'text-purple-200' },
+  vendor_sales:      { label: 'Vendor / Sales',    bg: 'bg-orange-900', text: 'text-orange-200' },
+  spam:              { label: 'Spam',              bg: 'bg-slate-700',  text: 'text-slate-400' },
+  general:           { label: 'General',           bg: 'bg-slate-800',  text: 'text-slate-300' },
+};
+
+const DECISION_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+  transferred: { label: 'Transferred', bg: 'bg-green-900', text: 'text-green-200' },
+  voicemail:   { label: 'Message',     bg: 'bg-blue-900',  text: 'text-blue-200' },
+  blocked:     { label: 'Blocked',     bg: 'bg-red-900',   text: 'text-red-200' },
+};
+
+const FILTER_OPTIONS = [
+  { value: 'all',               label: 'All Calls' },
+  { value: 'emergency',         label: 'Emergency' },
+  { value: 'appointment',       label: 'Appointments' },
+  { value: 'existing_customer', label: 'Existing Customers' },
+  { value: 'new_customer',      label: 'New Customers' },
+  { value: 'vendor_sales',      label: 'Vendor / Sales' },
+  { value: 'spam',              label: 'Spam' },
+  { value: 'general',           label: 'General' },
+  { value: 'transferred',       label: 'Transferred' },
+  { value: 'voicemail',         label: 'Voicemail' },
+  { value: 'blocked',           label: 'Blocked' },
+];
+
 export default function DashboardPage() {
   const router = useRouter();
   const [calls, setCalls] = useState<CallSession[]>([]);
@@ -30,6 +60,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [selectedCalls, setSelectedCalls] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     const init = async () => {
@@ -62,6 +94,31 @@ export default function DashboardPage() {
 
     init();
   }, []);
+
+  const filteredCalls = calls.filter((call) => {
+    if (filter !== 'all') {
+      const isDecisionFilter = ['transferred', 'voicemail', 'blocked'].includes(filter);
+      if (isDecisionFilter) {
+        if (call.decision !== filter) return false;
+      } else {
+        if (call.call_category !== filter) return false;
+      }
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      const searchable = [
+        call.caller_name,
+        call.from_number,
+        call.caller_reason,
+        call.call_category,
+        call.decision,
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!searchable.includes(q)) return false;
+    }
+
+    return true;
+  });
 
   const toggleCallSelection = (id: string) => {
     setSelectedCalls((prev) =>
@@ -109,70 +166,66 @@ export default function DashboardPage() {
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
   };
 
-  const getDecisionBadge = (decision: string) => {
-    switch (decision) {
-      case 'transferred':
-        return (
-          <span className="px-3 py-1 bg-green-900 text-green-200 rounded-full text-sm font-medium">
-            Transferred
-          </span>
-        );
-      case 'voicemail':
-        return (
-          <span className="px-3 py-1 bg-blue-900 text-blue-200 rounded-full text-sm font-medium">
-            Voicemail
-          </span>
-        );
-      default:
-        return (
-          <span className="px-3 py-1 bg-slate-700 text-slate-200 rounded-full text-sm font-medium">
-            {decision}
-          </span>
-        );
-    }
+  const getCategoryBadge = (category: string | null) => {
+    const config = CATEGORY_CONFIG[category || 'general'] || CATEGORY_CONFIG.general;
+    return (
+      <span className={`px-2 py-0.5 ${config.bg} ${config.text} rounded-full text-xs font-medium`}>
+        {config.label}
+      </span>
+    );
   };
+
+  const getDecisionBadge = (decision: string) => {
+    const config = DECISION_CONFIG[decision] || { label: decision, bg: 'bg-slate-700', text: 'text-slate-200' };
+    return (
+      <span className={`px-2 py-0.5 ${config.bg} ${config.text} rounded-full text-xs font-medium`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  const emergencyCount = calls.filter((c) => c.call_category === 'emergency').length;
+  const transferredCount = calls.filter((c) => c.decision === 'transferred').length;
+  const messageCount = calls.filter((c) => c.decision === 'voicemail').length;
+  const blockedCount = calls.filter((c) => c.decision === 'blocked').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
       {/* Header */}
       <div className="bg-slate-950 border-b border-slate-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">GATEKEEPER Dashboard</h1>
-            <p className="text-slate-400 mt-1">Call History</p>
+            <h1 className="text-2xl font-bold text-white">GATEKEEPER</h1>
+            <p className="text-slate-400 text-sm">Call Dashboard</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/blacklist')}
-              className="px-4 py-2 bg-red-900 hover:bg-red-800 text-red-100 rounded-lg transition"
+              className="px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700"
             >
               Blacklist
             </button>
-
             <button
               onClick={() => router.push('/whitelist')}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium"
+              className="px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700"
             >
-              👥 Contacts
+              Contacts
             </button>
-
             <button
               onClick={() => router.push('/setup')}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition font-medium"
+              className="px-3 py-1.5 text-sm bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition"
             >
-              ⚙️ Settings
+              Settings
             </button>
-
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium"
+              className="px-3 py-1.5 text-sm bg-slate-800 hover:bg-red-900 text-slate-400 hover:text-red-200 rounded-lg transition border border-slate-700"
             >
               Logout
             </button>
@@ -181,131 +234,129 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="text-slate-400 text-sm font-medium">Total Calls</div>
-            <div className="text-4xl font-bold text-white mt-2">{calls.length}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+            <div className="text-slate-400 text-xs font-medium uppercase">Total</div>
+            <div className="text-3xl font-bold text-white mt-1">{calls.length}</div>
           </div>
-
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="text-slate-400 text-sm font-medium">Transferred</div>
-            <div className="text-4xl font-bold text-green-400 mt-2">
-              {calls.filter((c) => c.decision === 'transferred').length}
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+            <div className="text-slate-400 text-xs font-medium uppercase">Transferred</div>
+            <div className="text-3xl font-bold text-green-400 mt-1">{transferredCount}</div>
+          </div>
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+            <div className="text-slate-400 text-xs font-medium uppercase">Messages</div>
+            <div className="text-3xl font-bold text-blue-400 mt-1">{messageCount}</div>
+          </div>
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+            <div className="text-slate-400 text-xs font-medium uppercase">
+              {emergencyCount > 0 ? 'Emergencies' : 'Blocked'}
             </div>
-          </div>
-
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="text-slate-400 text-sm font-medium">Voicemail</div>
-            <div className="text-4xl font-bold text-blue-400 mt-2">
-              {calls.filter((c) => c.decision === 'voicemail').length}
+            <div className={`text-3xl font-bold mt-1 ${emergencyCount > 0 ? 'text-red-400' : 'text-slate-400'}`}>
+              {emergencyCount > 0 ? emergencyCount : blockedCount}
             </div>
           </div>
         </div>
 
-        {/* Delete Control */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Search + Filter + Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Search calls..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500"
+          />
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 appearance-none cursor-pointer"
+          >
+            {FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
           <button
             onClick={handleDeleteSelected}
             disabled={selectedCalls.length === 0 || deleting}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg transition font-medium"
+            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg transition font-medium whitespace-nowrap"
           >
-            {deleting ? 'Deleting...' : `Delete Selected (${selectedCalls.length})`}
+            {deleting ? 'Deleting...' : `Delete (${selectedCalls.length})`}
           </button>
-
-          <p className="text-sm text-slate-400">
-            Check the desired box and click delete
-          </p>
         </div>
 
-        {/* Call History Table */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-900 border-b border-slate-700">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    DELETE
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    FROM
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    CALLER NAME
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    REASON
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    STATUS
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    DECISION
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    DATE
-                  </th>
-                </tr>
-              </thead>
+        {/* Call List */}
+        <div className="space-y-2">
+          {loading ? (
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 text-center text-slate-400">
+              Loading calls...
+            </div>
+          ) : filteredCalls.length === 0 ? (
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 text-center text-slate-400">
+              {search || filter !== 'all' ? 'No calls match your filters.' : 'No calls yet.'}
+            </div>
+          ) : (
+            filteredCalls.map((call) => (
+              <div
+                key={call.id}
+                className={`bg-slate-800 border rounded-lg p-4 hover:border-slate-500 transition ${
+                  call.call_category === 'emergency'
+                    ? 'border-red-800'
+                    : selectedCalls.includes(call.id)
+                    ? 'border-cyan-600'
+                    : 'border-slate-700'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedCalls.includes(call.id)}
+                    onChange={() => toggleCallSelection(call.id)}
+                    className="w-4 h-4 accent-red-600 mt-1 shrink-0"
+                  />
 
-              <tbody className="divide-y divide-slate-700">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
-                      Loading calls...
-                    </td>
-                  </tr>
-                ) : calls.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
-                      No calls yet
-                    </td>
-                  </tr>
-                ) : (
-                  calls.map((call) => (
-                    <tr key={call.id} className="hover:bg-slate-700 transition">
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedCalls.includes(call.id)}
-                          onChange={() => toggleCallSelection(call.id)}
-                          className="w-4 h-4 accent-red-600"
-                        />
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-white font-mono">
-                        {call.from_number}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-slate-300">
-                        {call.caller_name || '-'}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-slate-300 max-w-xs truncate">
-                        {call.caller_reason}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm">
-                        <span className="px-3 py-1 bg-slate-700 text-slate-200 rounded-full text-xs font-medium">
-                          {call.status}
+                  <div className="flex-1 min-w-0">
+                    {/* Row 1: Caller identity + time */}
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-white font-medium text-sm truncate">
+                          {call.caller_name || call.from_number}
                         </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-sm">
-                        {getDecisionBadge(call.decision)}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-slate-400">
+                        {call.caller_name && (
+                          <span className="text-slate-500 text-xs font-mono hidden sm:inline">
+                            {call.from_number}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-500 text-xs whitespace-nowrap shrink-0">
                         {formatDate(call.created_at)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </span>
+                    </div>
+
+                    {/* Row 2: Reason */}
+                    <p className="text-slate-400 text-sm truncate mb-2">
+                      {call.caller_reason}
+                    </p>
+
+                    {/* Row 3: Badges */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {getCategoryBadge(call.call_category)}
+                      {getDecisionBadge(call.decision)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
+
+        {/* Results count */}
+        {!loading && filteredCalls.length > 0 && (
+          <p className="text-xs text-slate-500 mt-4 text-center">
+            Showing {filteredCalls.length} of {calls.length} calls
+          </p>
+        )}
       </div>
 
       {/* Legal Footer */}
