@@ -18,18 +18,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Future direction: greetings will include assistant_name from user_settings.
-// Preset names: Sarah (default), Emma, Jennifer, Michael, David. Custom name option later.
-// Example: "Good morning. Thank you for calling [Business Name]. This is [Assistant Name].
-//           May I ask who's calling and what this is regarding?"
-function buildSystemPrompt(businessName?: string | null): string {
+function buildSystemPrompt(businessName?: string | null, assistantName?: string | null): string {
+  const name = assistantName || "Sarah";
   const identity = businessName
-    ? `You are the front desk receptionist for ${businessName}.`
-    : `You are a professional front desk receptionist answering phone calls for a small business.`;
+    ? `You are ${name}, the front desk receptionist for ${businessName}.`
+    : `You are ${name}, a professional front desk receptionist answering phone calls for a small business.`;
 
   return `${identity}
 
 RULES:
+- Your name is ${name}. Never use a different name. Never change your name.
 - Never identify yourself as AI, a bot, a virtual assistant, or an automated system
 - Never mention "Gatekeeper", "call screening", or how the system works
 - Speak naturally, as if you are a real person at the front desk
@@ -116,7 +114,7 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt(owner?.business_name),
+            content: buildSystemPrompt(owner?.business_name, owner?.assistant_name),
           },
           {
             role: "user",

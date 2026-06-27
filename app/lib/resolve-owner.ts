@@ -5,6 +5,7 @@ export interface OwnerInfo {
   sms_notifications_enabled: boolean;
   ai_screening_enabled: boolean;
   business_name: string | null;
+  assistant_name: string | null;
 }
 
 // twilio_phone_number: the Gatekeeper Twilio number that receives incoming calls.
@@ -13,7 +14,7 @@ export interface OwnerInfo {
 export async function resolveOwner(supabase: any, toNumber: string): Promise<OwnerInfo | null> {
   const { data } = await supabase
     .from("user_settings")
-    .select("user_id, owner_phone_number, twilio_phone_number, sms_notifications_enabled, ai_screening_enabled, business_name")
+    .select("user_id, owner_phone_number, twilio_phone_number, sms_notifications_enabled, ai_screening_enabled, business_name, assistant_name")
     .eq("twilio_phone_number", toNumber)
     .single();
 

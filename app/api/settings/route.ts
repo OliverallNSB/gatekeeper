@@ -90,6 +90,7 @@ export async function PUT(request: NextRequest) {
       'owner_phone_number',
       'twilio_phone_number',
       'business_name',
+      'assistant_name',
     ] as const;
 
     const updates: Record<string, unknown> = {};

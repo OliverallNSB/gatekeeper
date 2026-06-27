@@ -20,6 +20,7 @@ interface UserSettings {
   multi_user_enabled: boolean;
   owner_phone_number: string | null;
   business_name: string | null;
+  assistant_name: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { normalizePhone } from '@/lib/phone';
 import { resolveOwner } from '@/lib/resolve-owner';
+import { buildGreeting, buildWhitelistGreeting } from '@/lib/greeting';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -58,9 +59,7 @@ const trustedContact = trustedContacts?.find(contact =>
     if (trustedContact) {
       console.log('TRUSTED_CONTACT_DETECTED - Forwarding to owner');
 
-      const whitelistGreeting = owner?.business_name
-        ? `Thank you for calling ${owner.business_name}. One moment please, I'll connect you right away.`
-        : 'One moment please, I\'ll connect you right away.';
+      const whitelistGreeting = buildWhitelistGreeting(owner?.business_name, owner?.assistant_name);
 
       const twiml = new twilio.twiml.VoiceResponse();
       twiml.say({ voice: 'Polly.Joanna' }, whitelistGreeting);
@@ -74,9 +73,7 @@ const trustedContact = trustedContacts?.find(contact =>
     }
 
     // AI screening enabled - proceed with normal flow
-    const greeting = owner?.business_name
-      ? `Hi, thank you for calling ${owner.business_name}. May I ask who's calling and what this is regarding?`
-      : 'Hi, thank you for calling. May I ask who\'s calling and what this is regarding?';
+    const greeting = buildGreeting(owner?.business_name, owner?.assistant_name);
 
     const twiml = new twilio.twiml.VoiceResponse();
 

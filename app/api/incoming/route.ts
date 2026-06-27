@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { normalizePhone, escapeXml } from "@/lib/phone";
 import { resolveOwner } from "@/lib/resolve-owner";
+import { buildGreeting, buildWhitelistGreeting } from "@/lib/greeting";
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -52,9 +53,7 @@ export async function POST(req: Request) {
       callCategory: "existing_customer",
     });
 
-    const whitelistGreeting = owner?.business_name
-      ? `Thank you for calling ${escapeXml(owner.business_name)}. One moment please, I'll connect you right away.`
-      : `One moment please, I'll connect you right away.`;
+    const whitelistGreeting = escapeXml(buildWhitelistGreeting(owner?.business_name, owner?.assistant_name));
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -65,9 +64,7 @@ export async function POST(req: Request) {
 </Response>`);
   }
 
-  const greeting = owner?.business_name
-    ? `Hi, thank you for calling ${escapeXml(owner.business_name)}. May I ask who's calling and what this is regarding?`
-    : `Hi, thank you for calling. May I ask who's calling and what this is regarding?`;
+  const greeting = escapeXml(buildGreeting(owner?.business_name, owner?.assistant_name));
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
