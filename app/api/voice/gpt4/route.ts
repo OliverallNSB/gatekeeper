@@ -1,13 +1,21 @@
-import twilio from 'twilio';
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { normalizePhone } from '@/lib/phone';
+import { normalizePhone, escapeXml } from '@/lib/phone';
 import { resolveOwner } from '@/lib/resolve-owner';
 import { buildGreeting, buildWhitelistGreeting } from '@/lib/greeting';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+function xml(twiml: string) {
+  return new NextResponse(twiml, {
+    status: 200,
+    headers: { 'Content-Type': 'text/xml' },
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,13 +62,11 @@ export async function POST(request: NextRequest) {
         user_id: userId,
       });
 
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'Polly.Joanna' }, 'I\'m sorry, we\'re unable to take your call at this time. Goodbye.');
-      twiml.hangup();
-
-      return new NextResponse(twiml.toString(), {
-        headers: { 'Content-Type': 'application/xml' },
-      });
+      return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Joanna">I'm sorry, we're unable to take your call at this time. Goodbye.</Say>
+  <Hangup/>
+</Response>`);
     }
 
     const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
@@ -69,14 +75,12 @@ export async function POST(request: NextRequest) {
     if (owner && !owner.ai_screening_enabled) {
       console.log('AI_SCREENING_DISABLED - Forwarding to owner');
 
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.dial(ownerPhone.trim());
-      twiml.say({ voice: 'Polly.Joanna' }, 'Thank you for calling. Have a great day.');
-      twiml.hangup();
-
-      return new NextResponse(twiml.toString(), {
-        headers: { 'Content-Type': 'application/xml' },
-      });
+      return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial>${escapeXml(ownerPhone.trim())}</Dial>
+  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Hangup/>
+</Response>`);
     }
 
 const normalizedFromNumber = normalizePhone(fromNumber);
@@ -94,43 +98,32 @@ const trustedContact = trustedContacts?.find(contact =>
 
       const whitelistGreeting = buildWhitelistGreeting(owner?.business_name, owner?.assistant_name);
 
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'Polly.Joanna' }, whitelistGreeting);
-      twiml.dial(ownerPhone.trim());
-      twiml.say({ voice: 'Polly.Joanna' }, 'Thank you for calling. Have a great day.');
-      twiml.hangup();
-
-      return new NextResponse(twiml.toString(), {
-        headers: { 'Content-Type': 'application/xml' },
-      });
+      return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Joanna">${escapeXml(whitelistGreeting)}</Say>
+  <Dial>${escapeXml(ownerPhone.trim())}</Dial>
+  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Hangup/>
+</Response>`);
     }
 
     // AI screening enabled - proceed with normal flow
     const greeting = buildGreeting(owner?.business_name, owner?.assistant_name);
 
-    const twiml = new twilio.twiml.VoiceResponse();
-
-    // Gather speech input
-    const gather = twiml.gather({
-      input: ['speech'],
-      timeout: 10,
-      speechTimeout: 'auto',
-      maxSpeechTime: 60,
-      action: `${baseUrl}/api/voice/gpt4/process`,
-      method: 'POST',
-    } );
-
-    gather.say({ voice: 'Polly.Joanna' }, greeting);
-
-    return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'application/xml' },
-    });
+    return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="${baseUrl}/api/voice/gpt4/process" method="POST" timeout="10" speechTimeout="auto" maxSpeechTime="60">
+    <Say voice="Polly.Joanna">${escapeXml(greeting)}</Say>
+  </Gather>
+  <Say voice="Polly.Joanna">I'm sorry, I wasn't able to hear you. Please try calling back. Goodbye.</Say>
+  <Hangup/>
+</Response>`);
   } catch (error) {
     console.error('Voice endpoint error:', error);
-    const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'Polly.Joanna' }, 'I\'m sorry, we\'re experiencing a brief technical issue. Please try your call again in a few minutes.');
-    return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'application/xml' },
-    });
+    return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Joanna">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
+  <Hangup/>
+</Response>`);
   }
 }
