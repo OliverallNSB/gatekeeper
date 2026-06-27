@@ -35,9 +35,10 @@ const CATEGORY_CONFIG: Record<string, { label: string; bg: string; text: string 
 };
 
 const DECISION_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  transferred: { label: 'Transferred', bg: 'bg-green-900', text: 'text-green-200' },
-  voicemail:   { label: 'Message',     bg: 'bg-blue-900',  text: 'text-blue-200' },
-  blocked:     { label: 'Blocked',     bg: 'bg-red-900',   text: 'text-red-200' },
+  transferred:  { label: 'Transferred',  bg: 'bg-green-900',  text: 'text-green-200' },
+  voicemail:    { label: 'Message',      bg: 'bg-blue-900',   text: 'text-blue-200' },
+  blocked:      { label: 'Blocked',      bg: 'bg-red-900',    text: 'text-red-200' },
+  lead_intake:  { label: 'Lead',         bg: 'bg-purple-900', text: 'text-purple-200' },
 };
 
 const FILTER_OPTIONS = [

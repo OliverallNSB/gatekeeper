@@ -163,7 +163,7 @@ export async function POST(req: Request) {
             caller_name: callerName,
             call_category: callCategory,
             status: "completed",
-            decision: urgent ? "transferred" : "voicemail",
+            decision: urgent ? "transferred" : (callCategory === "new_customer" ? "lead_intake" : "voicemail"),
             created_at: new Date().toISOString(),
             user_id: userId,
           },
@@ -193,16 +193,34 @@ export async function POST(req: Request) {
     }
 
     // Build response TwiML
+    let afterSay: string;
+
+    if (urgent) {
+      afterSay = `<Dial>${escapeXml(ownerPhone.trim())}</Dial>
+  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Hangup/>`;
+    } else if (callCategory === "new_customer") {
+      const leadParams = new URLSearchParams({
+        step: "name",
+        name: callerName || "",
+        uid: userId || "",
+        callSid,
+        from,
+        to,
+      }).toString();
+      afterSay = `<Gather input="speech" action="${baseUrl}/api/voice/lead?${leadParams}" method="POST" timeout="8" speechTimeout="auto">
+    <Say voice="Polly.Joanna">Absolutely, I'd be happy to help. May I get your name?</Say>
+  </Gather>
+  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Hangup/>`;
+    } else {
+      afterSay = `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`;
+    }
+
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Joanna">${escapeXml(aiResponse)}</Say>
-  ${
-    urgent
-      ? `<Dial>${escapeXml(ownerPhone.trim())}</Dial>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
-  <Hangup/>`
-      : `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`
-  }
+  ${afterSay}
 </Response>`;
 
 
