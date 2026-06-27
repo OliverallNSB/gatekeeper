@@ -26,8 +26,42 @@ export async function POST(request: NextRequest) {
     } );
 
     const owner = await resolveOwner(supabase, toNumber);
+    const userId = owner?.user_id ?? null;
 
     console.log('USER_SETTINGS', owner);
+
+    // Blacklist check — reject before any screening or transfer
+    const { data: blacklistData } = await supabase
+      .from('blacklist')
+      .select('phone_number')
+      .eq('user_id', userId || '');
+    const normalizedFrom = normalizePhone(fromNumber);
+    const isBlocked = (blacklistData || []).some(
+      (row: any) => normalizePhone(row.phone_number) === normalizedFrom
+    );
+
+    if (isBlocked) {
+      console.log('BLACKLISTED - Rejecting call');
+      await supabase.from('call_sessions').insert({
+        call_sid: callSid,
+        from_number: fromNumber,
+        to_number: toNumber,
+        caller_reason: '[blocked number]',
+        caller_name: null,
+        call_category: 'spam',
+        status: 'completed',
+        decision: 'blocked',
+        user_id: userId,
+      });
+
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say({ voice: 'Polly.Joanna' }, 'I\'m sorry, we\'re unable to take your call at this time. Goodbye.');
+      twiml.hangup();
+
+      return new NextResponse(twiml.toString(), {
+        headers: { 'Content-Type': 'application/xml' },
+      });
+    }
 
     const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
 
@@ -46,7 +80,6 @@ export async function POST(request: NextRequest) {
     }
 
 const normalizedFromNumber = normalizePhone(fromNumber);
-const userId = owner?.user_id;
 let whitelistQuery = supabase.from("whitelist").select('*');
 if (userId) whitelistQuery = whitelistQuery.eq('user_id', userId);
 const { data: trustedContacts } = await whitelistQuery;
