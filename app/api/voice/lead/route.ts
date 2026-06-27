@@ -186,7 +186,7 @@ export async function POST(req: Request) {
 
   return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech" action="${buildGatherUrl(baseUrl, params)}" method="POST" timeout="8" speechTimeout="auto">
+  <Gather input="speech" action="${escapeXml(buildGatherUrl(baseUrl, params))}" method="POST" timeout="8" speechTimeout="auto">
     <Say voice="Polly.Joanna">${escapeXml(question)}</Say>
   </Gather>
   <Say voice="Polly.Joanna">I didn't catch that. Let me take what we have so far. Thank you for calling.</Say>

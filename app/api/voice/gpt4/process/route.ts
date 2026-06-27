@@ -210,7 +210,8 @@ export async function POST(req: Request) {
         from,
         to,
       }).toString();
-      afterSay = `<Gather input="speech" action="${baseUrl}/api/voice/lead?${leadParams}" method="POST" timeout="8" speechTimeout="auto">
+      const leadUrl = escapeXml(`${baseUrl}/api/voice/lead?${leadParams}`);
+      afterSay = `<Gather input="speech" action="${leadUrl}" method="POST" timeout="8" speechTimeout="auto">
     <Say voice="Polly.Joanna">Absolutely, I'd be happy to help. May I get your name?</Say>
   </Gather>
   <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
