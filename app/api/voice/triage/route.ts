@@ -2,8 +2,9 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { normalizePhone, escapeXml } from "@/lib/phone";
+import { escapeXml } from "@/lib/phone";
 import { isUrgent } from "@/lib/urgency";
+import { resolveOwner } from "@/lib/resolve-owner";
 
 function xml(twiml: string) {
   return new NextResponse(twiml, {
@@ -103,14 +104,6 @@ export async function POST(req: Request) {
 </Response>`);
 }
 
-async function resolveOwner(supabase: any, toNumber: string) {
-  const { data } = await supabase
-    .from("user_settings")
-    .select("user_id, owner_phone_number, sms_notifications_enabled")
-    .eq("twilio_phone_number", toNumber)
-    .single();
-  return data as { user_id: string; owner_phone_number: string; sms_notifications_enabled: boolean } | null;
-}
 
 async function sendOwnerSms(payload: {
   from: string;

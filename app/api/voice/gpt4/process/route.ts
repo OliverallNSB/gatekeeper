@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 import { escapeXml } from "@/lib/phone";
 import { isUrgent } from "@/lib/urgency";
+import { resolveOwner } from "@/lib/resolve-owner";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -38,14 +39,6 @@ IMPORTANT:
 
 Respond with ONLY the message you would say to the caller. Nothing else.`;
 
-async function resolveOwner(supabase: any, toNumber: string) {
-  const { data } = await supabase
-    .from("user_settings")
-    .select("user_id, owner_phone_number, sms_notifications_enabled")
-    .eq("twilio_phone_number", toNumber)
-    .single();
-  return data as { user_id: string; owner_phone_number: string; sms_notifications_enabled: boolean } | null;
-}
 
 async function sendSMS(options: { to: string; body: string }) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;

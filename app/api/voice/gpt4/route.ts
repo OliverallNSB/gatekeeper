@@ -2,6 +2,7 @@ import twilio from 'twilio';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { normalizePhone } from '@/lib/phone';
+import { resolveOwner } from '@/lib/resolve-owner';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -23,19 +24,14 @@ export async function POST(request: NextRequest) {
       to: toNumber,
     } );
 
-    // Get user settings by matching the Twilio number that was called
-    const { data: userSettings } = await supabase
-      .from('user_settings')
-      .select('user_id, ai_screening_enabled, owner_phone_number')
-      .eq('twilio_phone_number', toNumber)
-      .single();
+    const owner = await resolveOwner(supabase, toNumber);
 
-    console.log('USER_SETTINGS', userSettings);
+    console.log('USER_SETTINGS', owner);
 
-    const ownerPhone = userSettings?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
+    const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
 
     // If AI screening is disabled, forward call directly to owner
-    if (userSettings && !userSettings.ai_screening_enabled) {
+    if (owner && !owner.ai_screening_enabled) {
       console.log('AI_SCREENING_DISABLED - Forwarding to owner');
 
       const twiml = new twilio.twiml.VoiceResponse();
@@ -49,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
 const normalizedFromNumber = normalizePhone(fromNumber);
-const userId = userSettings?.user_id;
+const userId = owner?.user_id;
 let whitelistQuery = supabase.from("whitelist").select('*');
 if (userId) whitelistQuery = whitelistQuery.eq('user_id', userId);
 const { data: trustedContacts } = await whitelistQuery;
