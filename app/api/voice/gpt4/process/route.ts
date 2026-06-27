@@ -201,9 +201,11 @@ export async function POST(req: Request) {
   <Hangup/>`;
     } else if (callCategory === "new_customer") {
       const leadParams = new URLSearchParams({
-        step: "name",
+        step: "0",
         name: callerName || "",
         uid: userId || "",
+        aname: owner?.assistant_name || "Sarah",
+        bname: owner?.business_name || "",
         callSid,
         from,
         to,
