@@ -24,8 +24,6 @@ export async function POST(req: Request) {
   const callSid = (form.get("CallSid") ?? "").toString();
   const to = (form.get("To") ?? "").toString();
 
-  const baseUrl = process.env.NGROK_URL || new URL(req.url).origin;
-
   console.log("TRIAGE", { callSid, from, speech, confidence, digits });
 
   const supabase = createClient(
@@ -84,18 +82,15 @@ export async function POST(req: Request) {
   if (urgent && transferTo) {
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">One moment. Connecting you now.</Say>
+  <Say voice="alice">I understand, let me connect you right away.</Say>
   <Dial>${escapeXml(transferTo.trim())}</Dial>
-  <Say voice="alice">Thank you. Goodbye.</Say>
+  <Say voice="alice">Thank you for calling. Have a great day.</Say>
   <Hangup/>
 </Response>`);
   }
 
   // Otherwise, end politely
-  const msg =
-    speech
-      ? `Thank you. I will notify the owner. Goodbye.`
-      : `Thanks. I will notify the owner. Goodbye.`;
+  const msg = `Thank you for letting me know. I'll make sure they get your message right away. Have a good day.`;
 
   return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>

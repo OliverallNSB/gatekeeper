@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     console.log("URGENCY_CHECK", { urgent, speech });
 
     // Get AI response from GPT-4
-    let aiResponse = "Thank you for calling. Your message will be recorded.";
+    let aiResponse = "Thank you for calling. I'll make sure your message gets passed along right away.";
 
     try {
       const completion = await openai.chat.completions.create({
@@ -123,8 +123,8 @@ export async function POST(req: Request) {
       console.error("GPT4_ERROR", gptError);
       // Fallback to default response if GPT-4 fails
       aiResponse = urgent
-        ? "I'll connect you right away."
-        : "Thank you for calling. Your message will be recorded.";
+        ? "I understand, let me connect you right away."
+        : "Thank you for calling. I'll make sure your message gets passed along right away.";
     }
 
     // Save to Supabase
@@ -172,7 +172,7 @@ export async function POST(req: Request) {
   ${
     urgent
       ? `<Dial>${escapeXml(ownerPhone.trim())}</Dial>
-  <Say voice="alice">Thank you. Goodbye.</Say>
+  <Say voice="alice">Thank you for calling. Have a great day.</Say>
   <Hangup/>`
       : `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`
   }
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
     // Return fallback TwiML
     const fallbackTwiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">Thank you for calling. Your message will be recorded.</Say>
+  <Say voice="alice">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
   <Record />
 </Response>`;
 
