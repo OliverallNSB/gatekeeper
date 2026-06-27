@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
       const twiml = new twilio.twiml.VoiceResponse();
       twiml.dial(ownerPhone.trim());
-      twiml.say({ voice: 'alice' }, 'Thank you for calling. Have a great day.');
+      twiml.say({ voice: 'Polly.Joanna' }, 'Thank you for calling. Have a great day.');
       twiml.hangup();
 
       return new NextResponse(twiml.toString(), {
@@ -59,9 +59,9 @@ const trustedContact = trustedContacts?.find(contact =>
       console.log('TRUSTED_CONTACT_DETECTED - Forwarding to owner');
 
       const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'alice' }, 'One moment please, I\'ll connect you right away.');
+      twiml.say({ voice: 'Polly.Joanna' }, 'One moment please, I\'ll connect you right away.');
       twiml.dial(ownerPhone.trim());
-      twiml.say({ voice: 'alice' }, 'Thank you for calling. Have a great day.');
+      twiml.say({ voice: 'Polly.Joanna' }, 'Thank you for calling. Have a great day.');
       twiml.hangup();
 
       return new NextResponse(twiml.toString(), {
@@ -82,7 +82,7 @@ const trustedContact = trustedContacts?.find(contact =>
       method: 'POST',
     } );
 
-    gather.say({ voice: 'alice' }, 'Hi, thank you for calling. May I ask who\'s calling and what this is regarding?');
+    gather.say({ voice: 'Polly.Joanna' }, 'Hi, thank you for calling. May I ask who\'s calling and what this is regarding?');
 
     return new NextResponse(twiml.toString(), {
       headers: { 'Content-Type': 'application/xml' },
@@ -90,7 +90,7 @@ const trustedContact = trustedContacts?.find(contact =>
   } catch (error) {
     console.error('Voice endpoint error:', error);
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'I\'m sorry, we\'re experiencing a brief technical issue. Please try your call again in a few minutes.');
+    twiml.say({ voice: 'Polly.Joanna' }, 'I\'m sorry, we\'re experiencing a brief technical issue. Please try your call again in a few minutes.');
     return new NextResponse(twiml.toString(), {
       headers: { 'Content-Type': 'application/xml' },
     });

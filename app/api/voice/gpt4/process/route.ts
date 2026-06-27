@@ -168,11 +168,11 @@ export async function POST(req: Request) {
     // Build response TwiML
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">${escapeXml(aiResponse)}</Say>
+  <Say voice="Polly.Joanna">${escapeXml(aiResponse)}</Say>
   ${
     urgent
       ? `<Dial>${escapeXml(ownerPhone.trim())}</Dial>
-  <Say voice="alice">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
   <Hangup/>`
       : `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`
   }
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
     // Return fallback TwiML
     const fallbackTwiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
+  <Say voice="Polly.Joanna">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
   <Record />
 </Response>`;
 
