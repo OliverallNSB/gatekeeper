@@ -27,10 +27,36 @@ const CATEGORY_KEYWORDS: [string, string[]][] = [
   ]],
 ];
 
+// Phrase patterns that indicate a new customer inquiry even when
+// no single keyword matches (e.g. "I need a new cleaning service")
+const NEW_CUSTOMER_PATTERNS: [string, string][] = [
+  ["need", "service"],
+  ["need", "cleaning"],
+  ["need", "someone"],
+  ["need", "help with"],
+  ["want", "service"],
+  ["want", "cleaning"],
+  ["looking for", "service"],
+  ["looking for", "cleaning"],
+  ["looking for", "someone"],
+  ["can i get", "service"],
+  ["can i get", "cleaning"],
+  ["need", "lawn"],
+  ["need", "plumbing"],
+  ["need", "repair"],
+  ["need", "maintenance"],
+];
+
 export function classifyCall(speech: string): string {
   const text = (speech || "").toLowerCase();
+
   for (const [category, keywords] of CATEGORY_KEYWORDS) {
     if (keywords.some((kw) => text.includes(kw))) return category;
   }
+
+  if (NEW_CUSTOMER_PATTERNS.some(([a, b]) => text.includes(a) && text.includes(b))) {
+    return "new_customer";
+  }
+
   return "general";
 }
