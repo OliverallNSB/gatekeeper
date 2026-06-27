@@ -50,19 +50,27 @@ export async function POST(req: Request) {
       userId,
     });
 
+    const whitelistGreeting = owner?.business_name
+      ? `Thank you for calling ${escapeXml(owner.business_name)}. One moment please, I'll connect you right away.`
+      : `One moment please, I'll connect you right away.`;
+
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">One moment please, I'll connect you right away.</Say>
+  <Say voice="Polly.Joanna">${whitelistGreeting}</Say>
   <Dial>${escapeXml(transferTo.trim())}</Dial>
   <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
   <Hangup/>
 </Response>`);
   }
 
+  const greeting = owner?.business_name
+    ? `Hi, thank you for calling ${escapeXml(owner.business_name)}. May I ask who's calling and what this is regarding?`
+    : `Hi, thank you for calling. May I ask who's calling and what this is regarding?`;
+
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${baseUrl}/api/voice/triage" method="POST" timeout="6" speechTimeout="auto">
-    <Say voice="Polly.Joanna">Hi, thank you for calling. May I ask who's calling and what this is regarding?</Say>
+    <Say voice="Polly.Joanna">${greeting}</Say>
   </Gather>
   <Say voice="Polly.Joanna">I'm sorry, I wasn't able to hear you. Please try calling back. Goodbye.</Say>
   <Hangup/>

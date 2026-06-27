@@ -19,6 +19,7 @@ interface UserSettings {
   analytics_enabled: boolean;
   multi_user_enabled: boolean;
   owner_phone_number: string | null;
+  business_name: string | null;
   created_at: string;
   updated_at: string;
 }

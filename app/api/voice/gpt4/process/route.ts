@@ -16,11 +16,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Future direction: greetings will include business_name and assistant_name from user_settings.
+// Future direction: greetings will include assistant_name from user_settings.
 // Preset names: Sarah (default), Emma, Jennifer, Michael, David. Custom name option later.
 // Example: "Good morning. Thank you for calling [Business Name]. This is [Assistant Name].
 //           May I ask who's calling and what this is regarding?"
-const SYSTEM_PROMPT = `You are a professional front desk receptionist answering phone calls for a small business.
+function buildSystemPrompt(businessName?: string | null): string {
+  const identity = businessName
+    ? `You are the front desk receptionist for ${businessName}.`
+    : `You are a professional front desk receptionist answering phone calls for a small business.`;
+
+  return `${identity}
 
 RULES:
 - Never identify yourself as AI, a bot, a virtual assistant, or an automated system
@@ -38,6 +43,7 @@ IF THE CALL IS NOT URGENT:
 Thank them for the information and let them know the message will be passed along promptly.
 
 Respond with ONLY the spoken message. No labels, no formatting, no explanation.`;
+}
 
 
 async function sendSMS(options: { to: string; body: string }) {
@@ -101,7 +107,7 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "system",
-            content: SYSTEM_PROMPT,
+            content: buildSystemPrompt(owner?.business_name),
           },
           {
             role: "user",

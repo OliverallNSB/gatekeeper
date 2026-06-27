@@ -58,8 +58,12 @@ const trustedContact = trustedContacts?.find(contact =>
     if (trustedContact) {
       console.log('TRUSTED_CONTACT_DETECTED - Forwarding to owner');
 
+      const whitelistGreeting = owner?.business_name
+        ? `Thank you for calling ${owner.business_name}. One moment please, I'll connect you right away.`
+        : 'One moment please, I\'ll connect you right away.';
+
       const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'Polly.Joanna' }, 'One moment please, I\'ll connect you right away.');
+      twiml.say({ voice: 'Polly.Joanna' }, whitelistGreeting);
       twiml.dial(ownerPhone.trim());
       twiml.say({ voice: 'Polly.Joanna' }, 'Thank you for calling. Have a great day.');
       twiml.hangup();
@@ -70,6 +74,10 @@ const trustedContact = trustedContacts?.find(contact =>
     }
 
     // AI screening enabled - proceed with normal flow
+    const greeting = owner?.business_name
+      ? `Hi, thank you for calling ${owner.business_name}. May I ask who's calling and what this is regarding?`
+      : 'Hi, thank you for calling. May I ask who\'s calling and what this is regarding?';
+
     const twiml = new twilio.twiml.VoiceResponse();
 
     // Gather speech input
@@ -82,7 +90,7 @@ const trustedContact = trustedContacts?.find(contact =>
       method: 'POST',
     } );
 
-    gather.say({ voice: 'Polly.Joanna' }, 'Hi, thank you for calling. May I ask who\'s calling and what this is regarding?');
+    gather.say({ voice: 'Polly.Joanna' }, greeting);
 
     return new NextResponse(twiml.toString(), {
       headers: { 'Content-Type': 'application/xml' },
