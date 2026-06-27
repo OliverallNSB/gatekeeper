@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { escapeXml } from "@/lib/phone";
 import { isUrgent } from "@/lib/urgency";
 import { resolveOwner } from "@/lib/resolve-owner";
+import { extractCallerName } from "@/lib/extract-name";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -42,7 +43,10 @@ Acknowledge their urgency briefly and let them know you will connect them immedi
 IF THE CALL IS NOT URGENT:
 Thank them for the information and let them know the message will be passed along promptly.
 
-Respond with ONLY the spoken message. No labels, no formatting, no explanation.`;
+If the caller provided their name, use it naturally in your response (e.g. "Thank you, Sarah.").
+
+Respond in JSON format: {"message": "your spoken response", "caller_name": "first name or null"}
+Extract the caller's first name if they provided one. If no name was given, set caller_name to null.`;
 }
 
 
@@ -99,7 +103,9 @@ export async function POST(req: Request) {
     console.log("URGENCY_CHECK", { urgent, speech });
 
     // Get AI response from GPT-4
-    let aiResponse = "Thank you for calling. I'll make sure your message gets passed along right away.";
+    const defaultResponse = "Thank you for calling. I'll make sure your message gets passed along right away.";
+    let aiResponse = defaultResponse;
+    let callerName: string | null = extractCallerName(speech);
 
     try {
       const completion = await openai.chat.completions.create({
@@ -115,22 +121,29 @@ export async function POST(req: Request) {
               urgent
                 ? "This is urgent. Let them know you'll connect them immediately."
                 : "This is not urgent. Acknowledge their message professionally."
-            } Respond in 1-2 sentences.`,
+            } Respond in JSON: {"message": "...", "caller_name": "..."}`,
           },
         ],
-        max_tokens: 100,
+        max_tokens: 150,
         temperature: 0.7,
       });
 
-      aiResponse =
-        completion.choices[0].message.content || aiResponse;
-      console.log("GPT4_RESPONSE", { aiResponse });
+      const raw = completion.choices[0].message.content || "";
+      try {
+        const parsed = JSON.parse(raw);
+        aiResponse = parsed.message || defaultResponse;
+        if (parsed.caller_name && parsed.caller_name !== "null") {
+          callerName = parsed.caller_name;
+        }
+      } catch {
+        aiResponse = raw || defaultResponse;
+      }
+      console.log("GPT4_RESPONSE", { aiResponse, callerName });
     } catch (gptError) {
       console.error("GPT4_ERROR", gptError);
-      // Fallback to default response if GPT-4 fails
       aiResponse = urgent
         ? "I understand, let me connect you right away."
-        : "Thank you for calling. I'll make sure your message gets passed along right away.";
+        : defaultResponse;
     }
 
     // Save to Supabase
@@ -143,6 +156,7 @@ export async function POST(req: Request) {
             from_number: from,
             to_number: to,
             caller_reason: speech,
+            caller_name: callerName,
             status: "completed",
             decision: urgent ? "transferred" : "voicemail",
             created_at: new Date().toISOString(),
@@ -162,9 +176,10 @@ export async function POST(req: Request) {
     // Send SMS notification (only if enabled)
     if (smsEnabled) {
       try {
+        const smsFrom = callerName ? `${callerName} (${from})` : from;
         await sendSMS({
           to: ownerPhone,
-          body: `Gatekeeper alert\nFrom: ${from}\nMsg: ${speech.slice(0, 80)}`,
+          body: `New call from ${smsFrom}\nReason: ${speech.slice(0, 80)}\nDecision: ${urgent ? "Transferred" : "Message taken"}`,
         });
       } catch (smsError) {
         console.error("SMS_ERROR", smsError);

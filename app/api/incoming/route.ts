@@ -117,6 +117,7 @@ async function logCall(
     reason: string;
     decision: string;
     userId: string | null;
+    callerName?: string | null;
   }
 ) {
   const { error } = await supabase.from("call_sessions").insert({
@@ -124,6 +125,7 @@ async function logCall(
     from_number: payload.from,
     to_number: payload.to,
     caller_reason: payload.reason,
+    caller_name: payload.callerName ?? null,
     status: "completed",
     decision: payload.decision,
     user_id: payload.userId,

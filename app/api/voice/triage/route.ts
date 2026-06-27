@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { escapeXml } from "@/lib/phone";
 import { isUrgent } from "@/lib/urgency";
 import { resolveOwner } from "@/lib/resolve-owner";
+import { extractCallerName } from "@/lib/extract-name";
 
 function xml(twiml: string) {
   return new NextResponse(twiml, {
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
   const userId = owner?.user_id ?? null;
   const ownerPhone = owner?.owner_phone_number || process.env.OWNER_MOBILE_NUMBER!;
   const smsEnabled = owner?.sms_notifications_enabled ?? true;
+  const callerName = extractCallerName(speech);
 
   // Save to Supabase
   try {
@@ -44,6 +46,7 @@ export async function POST(req: Request) {
       from_number: from,
       to_number: to,
       caller_reason: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
+      caller_name: callerName,
       status: "completed",
       decision: urgent ? "transferred" : "voicemail",
       user_id: userId,
@@ -68,6 +71,7 @@ export async function POST(req: Request) {
         speech: speech || (digits ? `[DTMF ${digits}]` : "[no speech captured]"),
         confidence,
         to: ownerPhone,
+        callerName,
       });
       console.log("SMS_SENT_SUCCESS");
     } catch (err: any) {
@@ -106,6 +110,7 @@ async function sendOwnerSms(payload: {
   speech: string;
   confidence: string;
   to: string;
+  callerName: string | null;
 }) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
@@ -116,10 +121,10 @@ async function sendOwnerSms(payload: {
     throw new Error("Missing Twilio env vars or owner phone number.");
   }
 
+  const smsFrom = payload.callerName ? `${payload.callerName} (${payload.from})` : (payload.from || "unknown");
   const body =
-    `Gatekeeper alert\n` +
-    `From: ${payload.from || "unknown"}\n` +
-    `Msg: ${payload.speech.slice(0, 80)}`;
+    `New call from ${smsFrom}\n` +
+    `Reason: ${payload.speech.slice(0, 80)}`;
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
