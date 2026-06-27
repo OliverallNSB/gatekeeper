@@ -16,8 +16,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Future direction: the receptionist name will be "Sarah" and greetings will include
-// the business name once business_name is added to user_settings in a later phase.
+// Future direction: greetings will include business_name and assistant_name from user_settings.
+// Preset names: Sarah (default), Emma, Jennifer, Michael, David. Custom name option later.
+// Example: "Good morning. Thank you for calling [Business Name]. This is [Assistant Name].
+//           May I ask who's calling and what this is regarding?"
 const SYSTEM_PROMPT = `You are a professional front desk receptionist answering phone calls for a small business.
 
 RULES:
