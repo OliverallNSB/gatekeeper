@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { getCallAction } from '@/lib/call-actions';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -343,6 +344,9 @@ export default function DashboardPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       {getCategoryBadge(call.call_category)}
                       {getDecisionBadge(call.decision)}
+                      <span className="text-slate-600 text-xs">
+                        {getCallAction(call.call_category).label}
+                      </span>
                     </div>
                   </div>
                 </div>
