@@ -24,6 +24,16 @@ interface CallSession {
   updated_at: string;
 }
 
+interface LeadIntake {
+  id: string;
+  call_session_id: string;
+  caller_name: string | null;
+  service_needed: string | null;
+  property_address: string | null;
+  callback_phone: string | null;
+  created_at: string;
+}
+
 const CATEGORY_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
   emergency:         { label: 'Emergency',         bg: 'bg-red-900',    text: 'text-red-200' },
   appointment:       { label: 'Appointment',       bg: 'bg-green-900',  text: 'text-green-200' },
@@ -55,6 +65,15 @@ const FILTER_OPTIONS = [
   { value: 'blocked',           label: 'Blocked' },
 ];
 
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-slate-500 text-xs font-medium uppercase mb-0.5">{label}</div>
+      <div className="text-slate-200 text-sm break-words">{value}</div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [calls, setCalls] = useState<CallSession[]>([]);
@@ -64,6 +83,8 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
+  const [leadDataCache, setLeadDataCache] = useState<Record<string, LeadIntake | null>>({});
 
   useEffect(() => {
     const init = async () => {
@@ -128,6 +149,23 @@ export default function DashboardPage() {
     );
   };
 
+  const handleCardClick = async (call: CallSession) => {
+    if (expandedCallId === call.id) {
+      setExpandedCallId(null);
+      return;
+    }
+    setExpandedCallId(call.id);
+
+    if (call.decision === 'lead_intake' && !(call.call_sid in leadDataCache)) {
+      const { data } = await supabase
+        .from('lead_intake')
+        .select('*')
+        .eq('call_session_id', call.call_sid)
+        .single();
+      setLeadDataCache((prev) => ({ ...prev, [call.call_sid]: data }));
+    }
+  };
+
   const handleDeleteSelected = async () => {
     if (selectedCalls.length === 0) return;
 
@@ -173,6 +211,19 @@ export default function DashboardPage() {
     });
   };
 
+  const formatFullDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
   const getCategoryBadge = (category: string | null) => {
     const config = CATEGORY_CONFIG[category || 'general'] || CATEGORY_CONFIG.general;
     return (
@@ -195,6 +246,85 @@ export default function DashboardPage() {
   const transferredCount = calls.filter((c) => c.decision === 'transferred').length;
   const messageCount = calls.filter((c) => c.decision === 'voicemail').length;
   const blockedCount = calls.filter((c) => c.decision === 'blocked').length;
+
+  const renderExpandedDetails = (call: CallSession) => {
+    const lead = leadDataCache[call.call_sid] || null;
+    const isLead = call.decision === 'lead_intake';
+    const categoryLabel = (CATEGORY_CONFIG[call.call_category || 'general'] || CATEGORY_CONFIG.general).label;
+
+    return (
+      <div className="mt-3 pt-3 border-t border-slate-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+          <DetailItem
+            label="Full Name"
+            value={lead?.caller_name || call.caller_name || 'Not provided'}
+          />
+          <DetailItem
+            label="Caller Phone"
+            value={call.from_number}
+          />
+          {isLead && (
+            <>
+              <DetailItem
+                label="Callback Phone"
+                value={lead?.callback_phone || 'Not provided'}
+              />
+              <DetailItem
+                label="Service Requested"
+                value={lead?.service_needed || 'Not provided'}
+              />
+              <DetailItem
+                label="Property Address / City"
+                value={lead?.property_address || 'Not provided'}
+              />
+              <DetailItem
+                label="Referral Source"
+                value="Not provided"
+              />
+            </>
+          )}
+          <DetailItem label="Intent" value={categoryLabel} />
+          <DetailItem label="Confidence" value="Not provided" />
+          <DetailItem label="AI Summary" value="Not provided" />
+          <DetailItem label="Date / Time" value={formatFullDate(call.created_at)} />
+        </div>
+
+        <div className="mt-4">
+          <div className="text-slate-500 text-xs font-medium uppercase mb-1">Complete Transcript</div>
+          <div className="bg-slate-900 rounded-lg p-3 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+            {call.caller_reason || 'No transcript available.'}
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            disabled
+            className="px-3 py-1.5 text-xs bg-slate-700 text-slate-500 rounded-lg cursor-not-allowed"
+          >
+            Call
+          </button>
+          <button
+            disabled
+            className="px-3 py-1.5 text-xs bg-slate-700 text-slate-500 rounded-lg cursor-not-allowed"
+          >
+            SMS
+          </button>
+          <button
+            disabled
+            className="px-3 py-1.5 text-xs bg-slate-700 text-slate-500 rounded-lg cursor-not-allowed"
+          >
+            Email
+          </button>
+          <button
+            disabled
+            className="px-3 py-1.5 text-xs bg-slate-700 text-slate-500 rounded-lg cursor-not-allowed"
+          >
+            Convert to Client
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -302,12 +432,15 @@ export default function DashboardPage() {
             filteredCalls.map((call) => (
               <div
                 key={call.id}
-                className={`bg-slate-800 border rounded-lg p-4 hover:border-slate-500 transition ${
-                  call.call_category === 'emergency'
-                    ? 'border-red-800'
+                onClick={() => handleCardClick(call)}
+                className={`bg-slate-800 border rounded-lg p-4 cursor-pointer transition ${
+                  expandedCallId === call.id
+                    ? 'border-cyan-600 ring-1 ring-cyan-600/30'
+                    : call.call_category === 'emergency'
+                    ? 'border-red-800 hover:border-red-700'
                     : selectedCalls.includes(call.id)
                     ? 'border-cyan-600'
-                    : 'border-slate-700'
+                    : 'border-slate-700 hover:border-slate-500'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -315,6 +448,7 @@ export default function DashboardPage() {
                     type="checkbox"
                     checked={selectedCalls.includes(call.id)}
                     onChange={() => toggleCallSelection(call.id)}
+                    onClick={(e) => e.stopPropagation()}
                     className="w-4 h-4 accent-red-600 mt-1 shrink-0"
                   />
 
@@ -337,7 +471,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Row 2: Reason */}
-                    <p className="text-slate-400 text-sm truncate mb-2">
+                    <p className={`text-slate-400 text-sm mb-2 ${expandedCallId === call.id ? '' : 'truncate'}`}>
                       {call.caller_reason}
                     </p>
 
@@ -349,6 +483,9 @@ export default function DashboardPage() {
                         {getCallAction(call.call_category).label}
                       </span>
                     </div>
+
+                    {/* Expanded Details */}
+                    {expandedCallId === call.id && renderExpandedDetails(call)}
                   </div>
                 </div>
               </div>
