@@ -36,17 +36,23 @@ RULES:
 - Do not ask follow-up questions
 - Do not offer additional help beyond acknowledging the caller
 
-IF THE CALL IS URGENT:
-Acknowledge their urgency briefly and let them know you will connect them immediately.
+Determine the caller's INTENT — what they are trying to accomplish:
+- emergency: urgent situation requiring immediate attention (leak, fire, flood, accident, safety issue)
+- new_customer: interested in services, pricing, estimates, becoming a client, or inquiring about availability
+- existing_customer: following up on existing work, projects, invoices, or previous interactions
+- appointment: scheduling, rescheduling, or canceling an appointment
+- vendor_sales: selling products, marketing services, or proposing partnerships
+- spam: robocalls, scams, or irrelevant solicitations
+- general: anything that does not clearly fit the above
 
-IF THE CALL IS NOT URGENT:
-Thank them for the information and let them know the message will be passed along promptly.
+IF EMERGENCY: Acknowledge their urgency briefly and let them know you will connect them immediately.
+IF NOT EMERGENCY: Thank them for the information and let them know the message will be passed along promptly.
 
-If the caller provided their name, use it naturally in your response (e.g. "Thank you, Sarah.").
+If the caller provided their name, use it naturally in your response.
 
-Respond in JSON format: {"message": "your spoken response", "caller_name": "first name or null", "call_category": "category"}
+Respond in JSON format: {"message": "your spoken response", "caller_name": "first name or null", "intent": "category", "confidence": 85}
 Extract the caller's first name if they provided one. If no name was given, set caller_name to null.
-Classify the call into one of: emergency, existing_customer, new_customer, appointment, vendor_sales, spam, general.`;
+Set confidence as a number 0-100 for how certain you are of the intent classification.`;
 }
 
 
@@ -98,9 +104,8 @@ export async function POST(req: Request) {
   const smsEnabled = owner?.sms_notifications_enabled ?? true;
 
   try {
-    // Determine urgency
-    const urgent = isUrgent(speech);
-    console.log("URGENCY_CHECK", { urgent, speech });
+    let urgent = isUrgent(speech);
+    console.log("URGENCY_CHECK_FALLBACK", { urgent, speech });
 
     // Get AI response from GPT-4
     const defaultResponse = "Thank you for calling. I'll make sure your message gets passed along right away.";
@@ -118,11 +123,7 @@ export async function POST(req: Request) {
           },
           {
             role: "user",
-            content: `The caller said: "${speech}". ${
-              urgent
-                ? "This is urgent. Let them know you'll connect them immediately."
-                : "This is not urgent. Acknowledge their message professionally."
-            } Respond in JSON: {"message": "...", "caller_name": "...", "call_category": "..."}`,
+            content: `The caller said: "${speech}". Determine their intent and respond appropriately. Respond in JSON: {"message": "...", "caller_name": "...", "intent": "...", "confidence": 0-100}`,
           },
         ],
         max_tokens: 150,
@@ -130,19 +131,22 @@ export async function POST(req: Request) {
       });
 
       const raw = completion.choices[0].message.content || "";
+      let confidence: number | null = null;
       try {
         const parsed = JSON.parse(raw);
         aiResponse = parsed.message || defaultResponse;
+        confidence = parsed.confidence ?? null;
         if (parsed.caller_name && parsed.caller_name !== "null") {
           callerName = parsed.caller_name;
         }
-        if (parsed.call_category && parsed.call_category !== "null") {
-          callCategory = parsed.call_category;
+        if (parsed.intent && parsed.intent !== "null") {
+          callCategory = parsed.intent;
+          urgent = callCategory === "emergency";
         }
       } catch {
         aiResponse = raw || defaultResponse;
       }
-      console.log("GPT4_RESPONSE", { aiResponse, callerName, callCategory });
+      console.log("GPT4_RESPONSE", { aiResponse, callerName, callCategory, confidence });
     } catch (gptError) {
       console.error("GPT4_ERROR", gptError);
       aiResponse = urgent
@@ -209,13 +213,10 @@ export async function POST(req: Request) {
         callSid,
         from,
         to,
+        speech0: speech,
       }).toString();
       const leadUrl = escapeXml(`${baseUrl}/api/voice/lead?${leadParams}`);
-      afterSay = `<Gather input="speech" action="${leadUrl}" method="POST" timeout="8" speechTimeout="auto">
-    <Say voice="Polly.Amy">Absolutely, I'd be happy to help. May I get your name?</Say>
-  </Gather>
-  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
-  <Hangup/>`;
+      afterSay = `<Redirect method="POST">${leadUrl}</Redirect>`;
     } else {
       afterSay = `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`;
     }
