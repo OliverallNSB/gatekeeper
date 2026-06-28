@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { getCallAction } from '@/lib/call-actions';
@@ -85,6 +85,8 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState('all');
   const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
   const [leadDataCache, setLeadDataCache] = useState<Record<string, LeadIntake | null>>({});
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const lastClickedId = useRef<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -143,18 +145,68 @@ export default function DashboardPage() {
     return true;
   });
 
-  const toggleCallSelection = (id: string) => {
-    setSelectedCalls((prev) =>
-      prev.includes(id) ? prev.filter((callId) => callId !== id) : [...prev, id]
-    );
+  // Ctrl+A and Esc keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedCalls([]);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        setSelectedCalls(filteredCalls.map((c) => c.id));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredCalls]);
+
+  const handleCardClick = (e: React.MouseEvent, call: CallSession) => {
+    if (e.shiftKey && lastClickedId.current) {
+      const ids = filteredCalls.map((c) => c.id);
+      const start = ids.indexOf(lastClickedId.current);
+      const end = ids.indexOf(call.id);
+      if (start !== -1 && end !== -1) {
+        const range = ids.slice(Math.min(start, end), Math.max(start, end) + 1);
+        if (e.ctrlKey || e.metaKey) {
+          setSelectedCalls((prev) => [...new Set([...prev, ...range])]);
+        } else {
+          setSelectedCalls(range);
+        }
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      setSelectedCalls((prev) =>
+        prev.includes(call.id)
+          ? prev.filter((id) => id !== call.id)
+          : [...prev, call.id]
+      );
+      lastClickedId.current = call.id;
+    } else {
+      setSelectedCalls([call.id]);
+      lastClickedId.current = call.id;
+    }
   };
 
-  const handleCardClick = async (call: CallSession) => {
+  const handleCheckboxClick = (e: React.MouseEvent, callId: string) => {
+    e.stopPropagation();
+    setSelectedCalls((prev) =>
+      prev.includes(callId)
+        ? prev.filter((id) => id !== callId)
+        : [...prev, callId]
+    );
+    lastClickedId.current = callId;
+  };
+
+  const handleExpandToggle = async (e: React.MouseEvent, call: CallSession) => {
+    e.stopPropagation();
     if (expandedCallId === call.id) {
       setExpandedCallId(null);
       return;
     }
     setExpandedCallId(call.id);
+    setTranscriptOpen(false);
 
     if (call.decision === 'lead_intake' && !(call.call_sid in leadDataCache)) {
       const { data } = await supabase
@@ -277,23 +329,34 @@ export default function DashboardPage() {
                 label="Property Address / City"
                 value={lead?.property_address || 'Not provided'}
               />
-              <DetailItem
-                label="Referral Source"
-                value="Not provided"
-              />
             </>
           )}
           <DetailItem label="Intent" value={categoryLabel} />
-          <DetailItem label="Confidence" value="Not provided" />
           <DetailItem label="AI Summary" value="Not provided" />
           <DetailItem label="Date / Time" value={formatFullDate(call.created_at)} />
         </div>
 
         <div className="mt-4">
-          <div className="text-slate-500 text-xs font-medium uppercase mb-1">Complete Transcript</div>
-          <div className="bg-slate-900 rounded-lg p-3 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-            {call.caller_reason || 'No transcript available.'}
-          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setTranscriptOpen((prev) => !prev); }}
+            className="flex items-center gap-1.5 text-slate-500 text-xs font-medium uppercase hover:text-slate-300 transition"
+          >
+            <svg
+              className={`w-3 h-3 transition-transform ${transcriptOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            Conversation Transcript
+          </button>
+          {transcriptOpen && (
+            <div className="mt-2 bg-slate-900 rounded-lg p-3 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+              {call.caller_reason || 'No transcript available.'}
+            </div>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -429,67 +492,89 @@ export default function DashboardPage() {
               {search || filter !== 'all' ? 'No calls match your filters.' : 'No calls yet.'}
             </div>
           ) : (
-            filteredCalls.map((call) => (
-              <div
-                key={call.id}
-                onClick={() => handleCardClick(call)}
-                className={`bg-slate-800 border rounded-lg p-4 cursor-pointer transition ${
-                  expandedCallId === call.id
-                    ? 'border-cyan-600 ring-1 ring-cyan-600/30'
-                    : call.call_category === 'emergency'
-                    ? 'border-red-800 hover:border-red-700'
-                    : selectedCalls.includes(call.id)
-                    ? 'border-cyan-600'
-                    : 'border-slate-700 hover:border-slate-500'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedCalls.includes(call.id)}
-                    onChange={() => toggleCallSelection(call.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 accent-red-600 mt-1 shrink-0"
-                  />
+            filteredCalls.map((call) => {
+              const isSelected = selectedCalls.includes(call.id);
+              const isExpanded = expandedCallId === call.id;
 
-                  <div className="flex-1 min-w-0">
-                    {/* Row 1: Caller identity + time */}
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-white font-medium text-sm truncate">
-                          {call.caller_name || call.from_number}
-                        </span>
-                        {call.caller_name && (
-                          <span className="text-slate-500 text-xs font-mono hidden sm:inline">
-                            {call.from_number}
+              return (
+                <div
+                  key={call.id}
+                  onClick={(e) => handleCardClick(e, call)}
+                  className={`bg-slate-800 border rounded-lg p-4 cursor-pointer transition select-none ${
+                    isExpanded
+                      ? 'border-cyan-600 ring-1 ring-cyan-600/30'
+                      : isSelected
+                      ? 'border-cyan-600'
+                      : call.call_category === 'emergency'
+                      ? 'border-red-800 hover:border-red-700'
+                      : 'border-slate-700 hover:border-slate-500'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      onClick={(e) => handleCheckboxClick(e, call.id)}
+                      className="w-4 h-4 accent-cyan-600 mt-1 shrink-0 cursor-pointer"
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      {/* Row 1: Caller identity + time */}
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-white font-medium text-sm truncate">
+                            {call.caller_name || call.from_number}
                           </span>
-                        )}
+                          {call.caller_name && (
+                            <span className="text-slate-500 text-xs font-mono hidden sm:inline">
+                              {call.from_number}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-slate-500 text-xs whitespace-nowrap shrink-0">
+                          {formatDate(call.created_at)}
+                        </span>
                       </div>
-                      <span className="text-slate-500 text-xs whitespace-nowrap shrink-0">
-                        {formatDate(call.created_at)}
-                      </span>
+
+                      {/* Row 2: Reason */}
+                      <p className={`text-slate-400 text-sm mb-2 ${isExpanded ? '' : 'truncate'}`}>
+                        {call.caller_reason}
+                      </p>
+
+                      {/* Row 3: Badges */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {getCategoryBadge(call.call_category)}
+                        {getDecisionBadge(call.decision)}
+                        <span className="text-slate-600 text-xs">
+                          {getCallAction(call.call_category).label}
+                        </span>
+                      </div>
+
+                      {/* Expanded Details */}
+                      {isExpanded && renderExpandedDetails(call)}
                     </div>
 
-                    {/* Row 2: Reason */}
-                    <p className={`text-slate-400 text-sm mb-2 ${expandedCallId === call.id ? '' : 'truncate'}`}>
-                      {call.caller_reason}
-                    </p>
-
-                    {/* Row 3: Badges */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {getCategoryBadge(call.call_category)}
-                      {getDecisionBadge(call.decision)}
-                      <span className="text-slate-600 text-xs">
-                        {getCallAction(call.call_category).label}
-                      </span>
-                    </div>
-
-                    {/* Expanded Details */}
-                    {expandedCallId === call.id && renderExpandedDetails(call)}
+                    {/* Expand / Collapse chevron */}
+                    <button
+                      onClick={(e) => handleExpandToggle(e, call)}
+                      className="shrink-0 mt-0.5 p-1 text-slate-500 hover:text-slate-300 transition rounded"
+                      title={isExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      <svg
+                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
