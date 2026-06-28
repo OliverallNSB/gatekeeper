@@ -163,8 +163,13 @@ export default function DashboardPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [filteredCalls]);
 
+  const handleCardMouseDown = (e: React.MouseEvent) => {
+    if (e.shiftKey) e.preventDefault();
+  };
+
   const handleCardClick = (e: React.MouseEvent, call: CallSession) => {
     if (e.shiftKey && lastClickedId.current) {
+      e.preventDefault();
       const ids = filteredCalls.map((c) => c.id);
       const start = ids.indexOf(lastClickedId.current);
       const end = ids.indexOf(call.id);
@@ -176,6 +181,7 @@ export default function DashboardPage() {
           setSelectedCalls(range);
         }
       }
+      lastClickedId.current = call.id;
     } else if (e.ctrlKey || e.metaKey) {
       setSelectedCalls((prev) =>
         prev.includes(call.id)
@@ -499,6 +505,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={call.id}
+                  onMouseDown={handleCardMouseDown}
                   onClick={(e) => handleCardClick(e, call)}
                   className={`bg-slate-800 border rounded-lg p-4 cursor-pointer transition select-none ${
                     isExpanded
@@ -514,8 +521,9 @@ export default function DashboardPage() {
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      readOnly
+                      onChange={() => {}}
                       onClick={(e) => handleCheckboxClick(e, call.id)}
+                      onMouseDown={(e) => e.stopPropagation()}
                       className="w-4 h-4 accent-cyan-600 mt-1 shrink-0 cursor-pointer"
                     />
 
@@ -552,7 +560,11 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Expanded Details */}
-                      {isExpanded && renderExpandedDetails(call)}
+                      {isExpanded && (
+                        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                          {renderExpandedDetails(call)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Expand / Collapse chevron */}
