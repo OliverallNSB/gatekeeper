@@ -197,7 +197,7 @@ export async function POST(req: Request) {
 
     if (urgent) {
       afterSay = `<Dial>${escapeXml(ownerPhone.trim())}</Dial>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
   <Hangup/>`;
     } else if (callCategory === "new_customer") {
       const leadParams = new URLSearchParams({
@@ -212,9 +212,9 @@ export async function POST(req: Request) {
       }).toString();
       const leadUrl = escapeXml(`${baseUrl}/api/voice/lead?${leadParams}`);
       afterSay = `<Gather input="speech" action="${leadUrl}" method="POST" timeout="8" speechTimeout="auto">
-    <Say voice="Polly.Joanna">Absolutely, I'd be happy to help. May I get your name?</Say>
+    <Say voice="Polly.Amy">Absolutely, I'd be happy to help. May I get your name?</Say>
   </Gather>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
   <Hangup/>`;
     } else {
       afterSay = `<Record maxLength="60" finishOnKey="#" action="${baseUrl}/api/voice/hangup" />`;
@@ -222,7 +222,7 @@ export async function POST(req: Request) {
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">${escapeXml(aiResponse)}</Say>
+  <Say voice="Polly.Amy">${escapeXml(aiResponse)}</Say>
   ${afterSay}
 </Response>`;
 
@@ -240,7 +240,7 @@ export async function POST(req: Request) {
     // Return fallback TwiML
     const fallbackTwiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
+  <Say voice="Polly.Amy">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
   <Record />
 </Response>`;
 

@@ -161,7 +161,7 @@ export async function POST(req: Request) {
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">${closing}</Say>
+  <Say voice="Polly.Amy">${closing}</Say>
   <Hangup/>
 </Response>`);
   }
@@ -187,9 +187,9 @@ export async function POST(req: Request) {
   return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${escapeXml(buildGatherUrl(baseUrl, params))}" method="POST" timeout="8" speechTimeout="auto">
-    <Say voice="Polly.Joanna">${escapeXml(question)}</Say>
+    <Say voice="Polly.Amy">${escapeXml(question)}</Say>
   </Gather>
-  <Say voice="Polly.Joanna">I didn't catch that. Let me take what we have so far. Thank you for calling.</Say>
+  <Say voice="Polly.Amy">I didn't catch that. Let me take what we have so far. Thank you for calling.</Say>
   <Hangup/>
 </Response>`);
 }

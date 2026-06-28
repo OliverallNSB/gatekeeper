@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
       return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">I'm sorry, we're unable to take your call at this time. Goodbye.</Say>
+  <Say voice="Polly.Amy">I'm sorry, we're unable to take your call at this time. Goodbye.</Say>
   <Hangup/>
 </Response>`);
     }
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial>${escapeXml(ownerPhone.trim())}</Dial>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
   <Hangup/>
 </Response>`);
     }
@@ -100,9 +100,9 @@ const trustedContact = trustedContacts?.find(contact =>
 
       return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">${escapeXml(whitelistGreeting)}</Say>
+  <Say voice="Polly.Amy">${escapeXml(whitelistGreeting)}</Say>
   <Dial>${escapeXml(ownerPhone.trim())}</Dial>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
   <Hangup/>
 </Response>`);
     }
@@ -113,16 +113,16 @@ const trustedContact = trustedContacts?.find(contact =>
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${baseUrl}/api/voice/gpt4/process" method="POST" timeout="10" speechTimeout="auto" maxSpeechTime="60">
-    <Say voice="Polly.Joanna">${escapeXml(greeting)}</Say>
+    <Say voice="Polly.Amy">${escapeXml(greeting)}</Say>
   </Gather>
-  <Say voice="Polly.Joanna">I'm sorry, I wasn't able to hear you. Please try calling back. Goodbye.</Say>
+  <Say voice="Polly.Amy">I'm sorry, I wasn't able to hear you. Please try calling back. Goodbye.</Say>
   <Hangup/>
 </Response>`);
   } catch (error) {
     console.error('Voice endpoint error:', error);
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
+  <Say voice="Polly.Amy">I'm sorry, we're experiencing a brief technical issue. Please try your call again in a few minutes.</Say>
   <Hangup/>
 </Response>`);
   }

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">I'm sorry, we're unable to take your call at this time. Goodbye.</Say>
+  <Say voice="Polly.Amy">I'm sorry, we're unable to take your call at this time. Goodbye.</Say>
   <Hangup/>
 </Response>`);
   }
@@ -57,9 +57,9 @@ export async function POST(req: Request) {
 
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">${whitelistGreeting}</Say>
+  <Say voice="Polly.Amy">${whitelistGreeting}</Say>
   <Dial>${escapeXml(transferTo.trim())}</Dial>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
   <Hangup/>
 </Response>`);
   }
@@ -69,9 +69,9 @@ export async function POST(req: Request) {
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${baseUrl}/api/voice/triage" method="POST" timeout="6" speechTimeout="auto">
-    <Say voice="Polly.Joanna">${greeting}</Say>
+    <Say voice="Polly.Amy">${greeting}</Say>
   </Gather>
-  <Say voice="Polly.Joanna">I'm sorry, I wasn't able to hear you. Please try calling back. Goodbye.</Say>
+  <Say voice="Polly.Amy">I'm sorry, I wasn't able to hear you. Please try calling back. Goodbye.</Say>
   <Hangup/>
 </Response>`;
 

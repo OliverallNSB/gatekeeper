@@ -90,9 +90,9 @@ export async function POST(req: Request) {
   if (urgent && transferTo) {
     return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">I understand, let me connect you right away.</Say>
+  <Say voice="Polly.Amy">I understand, let me connect you right away.</Say>
   <Dial>${escapeXml(transferTo.trim())}</Dial>
-  <Say voice="Polly.Joanna">Thank you for calling. Have a great day.</Say>
+  <Say voice="Polly.Amy">Thank you for calling. Have a great day.</Say>
   <Hangup/>
 </Response>`);
   }
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
 
   return xml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">${msg}</Say>
+  <Say voice="Polly.Amy">${msg}</Say>
   <Hangup/>
 </Response>`);
 }
