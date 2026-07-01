@@ -7,6 +7,7 @@ import { isUrgent } from "@/lib/urgency";
 import { resolveOwner } from "@/lib/resolve-owner";
 import { extractCallerName } from "@/lib/extract-name";
 import { classifyCall } from "@/lib/classify-call";
+import { shouldNotifySms } from "@/lib/sms-policy";
 
 function xml(twiml: string) {
   return new NextResponse(twiml, {
@@ -64,8 +65,8 @@ export async function POST(req: Request) {
     console.error("SUPABASE_ERROR", err?.message ?? err);
   }
 
-  // SMS owner (best effort, only if enabled)
-  if (smsEnabled) {
+  // SMS owner (best effort, only if enabled and intent warrants it)
+  if (smsEnabled && shouldNotifySms(callCategory)) {
     try {
       console.log("SENDING_SMS_TO", ownerPhone);
       await sendOwnerSms({

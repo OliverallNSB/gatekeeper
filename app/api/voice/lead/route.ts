@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 import { escapeXml } from "@/lib/phone";
+import { shouldNotifySms } from "@/lib/sms-policy";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -207,7 +208,7 @@ export async function POST(req: Request) {
         .eq("twilio_phone_number", ownerTo)
         .single();
 
-      if (settings?.sms_notifications_enabled && settings?.owner_phone_number) {
+      if (settings?.sms_notifications_enabled && settings?.owner_phone_number && shouldNotifySms("new_customer")) {
         await sendSMS({
           to: settings.owner_phone_number,
           body: [

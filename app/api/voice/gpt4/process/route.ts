@@ -8,6 +8,7 @@ import { isUrgent } from "@/lib/urgency";
 import { resolveOwner } from "@/lib/resolve-owner";
 import { extractCallerName } from "@/lib/extract-name";
 import { classifyCall } from "@/lib/classify-call";
+import { shouldNotifySms } from "@/lib/sms-policy";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -182,8 +183,8 @@ export async function POST(req: Request) {
       console.error("SUPABASE_ERROR", dbError);
     }
 
-    // Send SMS notification (only if enabled)
-    if (smsEnabled) {
+    // Send SMS notification (only if enabled and intent warrants it)
+    if (smsEnabled && shouldNotifySms(callCategory)) {
       try {
         const smsFrom = callerName ? `${callerName} (${from})` : from;
         const categoryLabel = callCategory.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
